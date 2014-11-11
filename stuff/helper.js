@@ -12,3 +12,5 @@ smth.unbind = smth.unbind;
 smth.$listeners = smth.$listeners;
 smth.watch = smth.watch;
 smth.unwatch = smth.unwatch;
+
+smth.$types = smth.$types;

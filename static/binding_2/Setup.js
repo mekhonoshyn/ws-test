@@ -20,3 +20,5 @@ _define(Array.prototype, 'isArray', true);
 function _not(value) {
     return !value;
 }
+
+var _log = console.log.bind(console);
