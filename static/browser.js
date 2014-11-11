@@ -1,5 +1,7 @@
-var socket = new WebSocket("ws://localhost:8082");
+var socket = new WebSocket("wss://localhost:8082");
 var subscribeElem = document.querySelector('#subscribe');
+
+debugger;
 
 document.forms.publish.onsubmit = function () {
     socket.send(this.message.value);
