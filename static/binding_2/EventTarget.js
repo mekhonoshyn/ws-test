@@ -2,7 +2,7 @@ function _EventTarget() {
     _define(this, '$types', {});
 }
 
-_define(_EventTarget.prototype, 'addEventListener', function _addEventListener(type, listener) {
+_defineOwn(_EventTarget.prototype, 'addEventListener', function _addEventListener(type, listener) {
         var array = this.$types[type];
 
         if (!array) {
@@ -15,7 +15,7 @@ _define(_EventTarget.prototype, 'addEventListener', function _addEventListener(t
     }
 );
 
-_define(_EventTarget.prototype, 'removeEventListener', function _removeEventListener(type, listener) {
+_defineOwn(_EventTarget.prototype, 'removeEventListener', function _removeEventListener(type, listener) {
         var array = this.$types[type];
 
         if (!array) {
@@ -34,7 +34,7 @@ _define(_EventTarget.prototype, 'removeEventListener', function _removeEventList
     }
 );
 
-_define(_EventTarget.prototype, 'dispatchEvent', function dispatchEvent(event) {
+_defineOwn(_EventTarget.prototype, 'dispatchEvent', function dispatchEvent(event) {
         var array = this.$types[event.type];
 
         if (!array) {

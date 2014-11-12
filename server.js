@@ -1,41 +1,63 @@
 var http = require('http');
-//var fs = require('fs');
-var fileServer = new (require('node-static')).Server('.');
-
-var wsServer = new (new require('ws')).Server({
+var nodeStatic = require('node-static');
+var nsServer = new nodeStatic.Server('.');
+var webSocket = require('ws');
+var wsServer = new webSocket.Server({
     port: 8082
 });
+var hash = require('./hash');
 
-var clients = {};
+http.createServer(function (req, res) {
+    nsServer.serve(req, res);
+}).listen(8081);
 
 wsServer.on('connection', function (ws) {
-    var id = Math.random();
+    var id = hash();
 
-    clients[id] = ws;
+    _log("connection opened:", id);
 
-    console.log("новое соединение " + id);
-
-    ws.on('message', function (message) {
-        console.log('получено сообщение ' + message);
-
-        Object.keys(clients).forEach(function _forEach(key) {
-            clients[key].send(JSON.stringify({
-                type: 'binding',
-                bindKey: parseInt(String(Math.random()).slice(2)).toString(16).toUpperCase(),
-                bindValue: 'some test string'
-            }));
-        });
+    ws.on('message', function (rawData) {
+        _handle(ws, JSON.parse(rawData));
     });
 
     ws.on('close', function () {
-        console.log('соединение закрыто ' + id);
-
-        delete clients[id];
+        _log('connection closed:', id);
     });
 });
 
-http.createServer(function (req, res) {
-    fileServer.serve(req, res);
-}).listen(8081);
+var _log = console.log.bind(console);
 
-console.log("Сервер запущен на портах 8081, 8082");
+function _handle(ws, data) {
+    if (handlers[data.type]) {
+        handlers[data.type](ws, data.data);
+    } else {
+        handlers.unknown(ws, data);
+    }
+}
+
+var handlers = {
+    request: function _requestHandler(ws, data) {
+        _log('received request:', data);
+
+        _handle(ws, data);
+    },
+    model: function _modelHandler(ws, data) {
+        _log('requested model structure:', data);
+
+        ws.send(JSON.stringify({
+            type: 'response',
+            data: {
+                type: 'model',
+                data: {
+                    name: data.name,
+                    definition: require('./models/' + data.name)
+                }
+            }
+        }));
+    },
+    unknown: function _defaultHandler(ws, data) {
+        _log('default socket onMessage handler for data:', data);
+    }
+};
+
+_log("server is listening ports 8081, 8082");

@@ -14,3 +14,11 @@ smth.watch = smth.watch;
 smth.unwatch = smth.unwatch;
 
 smth.$types = smth.$types;
+
+smth.on = smth.on;
+smth.listen = smth.listen;
+smth.extendBy = smth.extendBy;
+smth.mixWith = smth.mixWith;
+
+var require = require;
+var module = module;

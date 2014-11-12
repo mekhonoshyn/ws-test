@@ -1,6 +1,17 @@
 <script src="Setup.js"></script>
 <script src="EventTarget.js"></script>
 <script src="Data.js"></script>
+<script src="../../public/useful-utils/d-n-d/dnd.js"></script>
+<style>*{font-family:monospace;}</style>
 <body>
+    red x:&nbsp&nbsp<input id="input_red_x"/><br/>
+    red y:&nbsp&nbsp<input id="input_red_y"/><br/>
+    blue x:&nbsp<input id="input_blue_x"/><br/>
+    blue y:&nbsp<input id="input_blue_y"/>
+
+    <style>div{top:0;left:0;position:absolute;width:200px;height:200px}#rect_red{background-color:rgba(0,0,0,0.1)}#rect_blue{background-color:rgba(0,0,0,0.15)}</style>
+    <div id="rect_red"></div>
+    <div id="rect_blue"></div>
+
     <script src="binding_test.js"></script>
 </body>

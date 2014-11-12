@@ -3,7 +3,7 @@
  */
 
 function _Data(fields) {
-    fields && fields.forEach(this.addField, this);
+    fields && fields.length && fields.forEach(this.addField, this);
 }
 
 _define(_Data.prototype, 'addField', function _addField(fieldDef) {
@@ -43,7 +43,7 @@ _define(_Data.prototype, 'bind', function _bind(property, target, key, fieldName
         key: key,
         target: target,
         property: property,
-        events: eventNames && eventNames.map(function _map(event) {
+        events: eventNames && eventNames.length && eventNames.map(function _map(event) {
             var _handler = function () {
                 this[fieldName] = [ wConverter ? wConverter(target[property]) : target[property], key ];
             }.bind(this);
