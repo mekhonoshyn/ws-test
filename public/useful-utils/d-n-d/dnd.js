@@ -96,11 +96,17 @@ _DnDFactory = (function _DnDFactoryInitializer() {
 
         return Object.defineProperties({}, {
             moveTo: {
-                value: _transform
+                value: function _moveTo(newX, newY) {
+                    _transform(newX, newY);
+
+                    onDropCallback && onDropCallback(x, y);
+                }
             },
             moveBy: {
                 value: function _moveBy(dX, dY) {
                     _transform(x + dX, y + dY);
+
+                    onDropCallback && onDropCallback(x, y);
                 }
             },
             x: {
@@ -109,6 +115,8 @@ _DnDFactory = (function _DnDFactoryInitializer() {
                 },
                 set: function _set(newX) {
                     _transform(newX, y);
+
+                    onDropCallback && onDropCallback(x, y);
                 }
             },
             y: {
@@ -117,6 +125,8 @@ _DnDFactory = (function _DnDFactoryInitializer() {
                 },
                 set: function _set(newY) {
                     _transform(x, newY);
+
+                    onDropCallback && onDropCallback(x, y);
                 }
             }
         });

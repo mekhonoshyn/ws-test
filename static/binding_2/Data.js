@@ -45,6 +45,8 @@ _define(_Data.prototype, 'bind', function _bind(property, target, key, fieldName
         property: property,
         events: eventNames && eventNames.length && eventNames.map(function _map(event) {
             var _handler = function () {
+                console.log(event, property, target[property]);
+
                 this[fieldName] = [ wConverter ? wConverter(target[property]) : target[property], key ];
             }.bind(this);
 
@@ -58,7 +60,7 @@ _define(_Data.prototype, 'bind', function _bind(property, target, key, fieldName
         rConverter: rConverter
     });
 
-    target[property] = rConverter ? rConverter(this[fieldName]) : this[fieldName];
+//    target[property] = rConverter ? rConverter(this[fieldName]) : this[fieldName];
 });
 
 // unbind 'key' key from field 'fieldName'

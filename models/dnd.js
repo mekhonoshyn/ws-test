@@ -14,7 +14,7 @@ module.exports = {
         },
         {
             "name": "red_y",
-            "value": 100
+            "value": 200
         },
         {
             "name": "blue_x",
@@ -22,7 +22,7 @@ module.exports = {
         },
         {
             "name": "blue_y",
-            "value": 300
+            "value": 400
         }
     ]
 };
