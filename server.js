@@ -14,7 +14,7 @@ http.createServer(function (req, res) {
 wsServer.on('connection', function (ws) {
     var id = hash();
 
-    _log("connection opened:", id);
+    _log('connection opened:', id);
 
     ws.on('message', function (rawData) {
         _handle(ws, JSON.parse(rawData));
@@ -55,9 +55,12 @@ var handlers = {
             }
         }));
     },
+    binding: function _bindingHandler(ws, data) {
+        _log('received binding update:', data);
+    },
     unknown: function _defaultHandler(ws, data) {
         _log('default socket onMessage handler for data:', data);
     }
 };
 
-_log("server is listening ports 8081, 8082");
+_log('server is listening ports 8081, 8082');

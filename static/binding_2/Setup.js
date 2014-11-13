@@ -16,22 +16,22 @@ function _define(context, property, getter, setter, enumerable) {
         definition.enumerable = !!enumerable;
     }
 
-    Object.defineProperty(context, property, definition);
+    return Object.defineProperty(context, property, definition);
 }
 
-function _defineOwn() {
-    var args = Array.prototype.slice.call(arguments);
-
-    args.length = 4;
-
-    _define.apply(null, args.concat(true));
-}
+//function _defineOwn() {
+//    var args = Array.prototype.slice.call(arguments);
+//
+//    args.length = 4;
+//
+//    _define.apply(null, args.concat(true));
+//}
 
 _define(Array.prototype, 'isArray', true);
 
-function _not(value) {
-    return !value;
-}
+//function _not(value) {
+//    return !value;
+//}
 
 var _log = console.log.bind(console);
 
@@ -43,14 +43,14 @@ var _log = console.log.bind(console);
     });
 })();
 
-_define(Object.prototype, 'extendBy', function _extendBy(src) {
-    Object.keys(src).forEach(function _forEach(key) {
-        this[key] || (this[key] = src[key]);
-    }, this);
-});
-
-_define(Object.prototype, 'mixWith', function _extendBy(src) {
-    this.extendBy(src.prototype);
-
-    src.call(this);
-});
+//_define(Object.prototype, 'extendBy', function _extendBy(src) {
+//    Object.keys(src).forEach(function _forEach(key) {
+//        this[key] || (this[key] = src[key]);
+//    }, this);
+//});
+//
+//_define(Object.prototype, 'mixWith', function _mixWith(src) {
+//    this.extendBy(src.prototype);
+//
+//    src.call(this);
+//});

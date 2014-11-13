@@ -42,15 +42,41 @@ _DnDFactory = (function _DnDFactoryInitializer() {
             transformationMatrix = transformationMatrixTemplate.slice(),
             transformTargetStyle = config.tTgt.style,
             dTgt = config.dTgt || document,
-            onDropCallback = config.onDrop,
-            onDragCallback = config.onDrag;
+            binding = config.binding;
 
-        function _transform(newX, newY) {
+        function _getX() {
+            return x;
+        }
+
+        function _getY() {
+            return y;
+        }
+
+        binding && Object.defineProperties(binding, {
+            x: {
+                get: _getX,
+                set: function _setX(newX) {
+                    _transform(newX, y);
+                }
+            },
+            y: {
+                get: _getY,
+                set: function _setY(newY) {
+                    _transform(x, newY);
+                }
+            }
+        });
+
+        function _transform(newX, newY, binding) {
             transformationMatrix[1] = x = newX;
 
             transformationMatrix[3] = y = newY;
 
             transformTargetStyle.transform = transformationMatrix.join('');
+
+            binding && binding.dispatchEvent && binding.event && binding.dispatchEvent({
+                type: binding.event
+            });
         }
 
         function _onGrab(event) {
@@ -75,15 +101,11 @@ _DnDFactory = (function _DnDFactoryInitializer() {
         function _onDrag(event) {
             event._sip();
 
-            _transform(event.pageX + savedX - savedPageX, event.pageY + savedY - savedPageY);
-
-            onDragCallback && onDragCallback(x, y);
+            _transform(event.pageX + savedX - savedPageX, event.pageY + savedY - savedPageY, binding);
         }
 
         function _onDrop(event) {
             event._sip();
-
-            onDropCallback && onDropCallback(x, y);
 
             dTgt._un(mouseMoveEvent, _onDrag);
 
@@ -95,38 +117,16 @@ _DnDFactory = (function _DnDFactoryInitializer() {
         _transform(config.iX || 0, config.iY || 0);
 
         return Object.defineProperties({}, {
-            moveTo: {
-                value: function _moveTo(newX, newY) {
-                    _transform(newX, newY);
-
-                    onDropCallback && onDropCallback(x, y);
-                }
-            },
-            moveBy: {
-                value: function _moveBy(dX, dY) {
-                    _transform(x + dX, y + dY);
-
-                    onDropCallback && onDropCallback(x, y);
-                }
-            },
             x: {
-                get: function _get() {
-                    return x;
-                },
-                set: function _set(newX) {
-                    _transform(newX, y);
-
-                    onDropCallback && onDropCallback(x, y);
+                get: _getX,
+                set: function _setX(newX) {
+                    _transform(newX, y, binding);
                 }
             },
             y: {
-                get: function _get() {
-                    return y;
-                },
-                set: function _set(newY) {
-                    _transform(x, newY);
-
-                    onDropCallback && onDropCallback(x, y);
+                get: _getY,
+                set: function _setY(newY) {
+                    _transform(x, newY, binding);
                 }
             }
         });

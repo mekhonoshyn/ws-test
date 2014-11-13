@@ -3,23 +3,24 @@
  */
 
 function _Data(fields) {
+    _define(this, '$binds', {});
+
+    _define(this, '$keys', {});
+
     fields && fields.length && fields.forEach(this.addField, this);
 }
 
 _define(_Data.prototype, 'addField', function _addField(fieldDef) {
-    if (!this.$binds) {
-        _define(this, '$binds', {});
-    }
-
-    var _isPlain = typeof fieldDef !== 'object',
-        _value = _isPlain ? '' : (fieldDef.value === undefined ? '' : fieldDef.value),
+    var _value = fieldDef.value,
         _listeners = [];
 
-    _define(this.$binds, _isPlain ? fieldDef : fieldDef.name, _listeners);
+    _define(this.$binds, fieldDef.name, _listeners);
 
-    _define(this, _isPlain ? fieldDef : fieldDef.name, function _get() {
+    _define(this.$keys, fieldDef.name, fieldDef.key);
+
+    _define(this, fieldDef.name, function _getValue() {
         return _value;
-    }, function _set(input) {
+    }, function _setValue(input) {
         var _key;
 
         if (input.isArray) {
@@ -37,17 +38,18 @@ _define(_Data.prototype, 'addField', function _addField(fieldDef) {
     });
 });
 
-//bind 'property' property of 'target' target as 'key' key to field 'fieldName' and update field value on happening events 'eventNames'
-_define(_Data.prototype, 'bind', function _bind(property, target, key, fieldName, eventNames, rConverter, wConverter) {
-    this.$binds[fieldName].push({
-        key: key,
+//bind 'property' property of 'target' target to field 'fieldName' and update field value on happening events 'events'
+_define(_Data.prototype, 'bind', function _bind(target, property, fieldName, events, rConverter, wConverter) {
+    var _listeners = this.$binds[fieldName],
+        _key = _hash();
+
+    _listeners.push({
+        key: _key,
         target: target,
         property: property,
-        events: eventNames && eventNames.length && eventNames.map(function _map(event) {
+        events: events && ((events.isArray && events.length) ? events : [ events ] ).map(function _map(event) {
             var _handler = function () {
-                console.log(event, property, target[property]);
-
-                this[fieldName] = [ wConverter ? wConverter(target[property]) : target[property], key ];
+                this[fieldName] = [ wConverter ? wConverter(target[property]) : target[property], _key ];
             }.bind(this);
 
             target.addEventListener(event, _handler);
@@ -60,25 +62,23 @@ _define(_Data.prototype, 'bind', function _bind(property, target, key, fieldName
         rConverter: rConverter
     });
 
-//    target[property] = rConverter ? rConverter(this[fieldName]) : this[fieldName];
-});
+    target.isSocket || (target[property] = rConverter ? rConverter(this[fieldName]) : this[fieldName]);
 
-// unbind 'key' key from field 'fieldName'
-_define(_Data.prototype, 'unbind', function _unbind(key, fieldName) {
-    var _bind = this.$binds[fieldName],
-        _index = _bind.length;
+    return function _unbind() {
+        var _index = _listeners.length;
 
-    for (var i = 0; i < _index; i++) {
-        if (_bind[i].key === key) {
-            _index = i;
+        for (var i = 0; i < _index; i++) {
+            if (_listeners[i].key === _key) {
+                _index = i;
 
-            break;
+                break;
+            }
         }
-    }
 
-    var listener = _bind.splice(_index, 1)[0];
+        var listener = _listeners.splice(_index, 1)[0];
 
-    listener && listener.events && listener.events.forEach(function _forEach(event) {
-        listener.target.removeEventListener(event.event, event.handler);
-    });
+        listener && listener.events && listener.events.length && listener.events.forEach(function _forEach(event) {
+            listener.target.removeEventListener(event.event, event.handler);
+        });
+    };
 });

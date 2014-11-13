@@ -31,6 +31,7 @@ socket.onmessage = function _onMessage(event) {
 };
 
 _define(socket, '$binds', new _EventTarget);
+_define(socket.$binds, 'isSocket', true);
 
 function _handle(data) {
     if (handlers[data.type]) {
@@ -75,49 +76,83 @@ function _assemblyModel(definition) {
     return root;
 }
 
+function _socketField(key) {
+    var _value;
+
+    return {
+        get: function _get() {
+            return _value;
+        },
+        set: function _set(value) {
+            (socket.readyState === 1) && socket.send({
+                type: 'binding',
+                data: {
+                    bindKey: key,
+                    bindValue: _value = value
+                }
+            });
+        }
+    };
+}
+
+function _addSocketBinding(model, fieldName) {
+    var _key = model.$keys[fieldName],
+        _field = _socketField(_key);
+
+    _define(socket.$binds, _key, _field.get, _field.set);
+
+    model.bind(socket.$binds, _key, fieldName, 'binding');
+}
+
 var models = {};
 
 function _onModelLoad() {
-    var input_red_x = document.querySelector('#input_red_x');
-    var input_red_y = document.querySelector('#input_red_y');
-    var input_blue_x = document.querySelector('#input_blue_x');
-    var input_blue_y = document.querySelector('#input_blue_y');
+    models.dnd.bind(document.querySelector('#input_red_x'), 'value', 'red_x', 'change', false, parseInt);
+    models.dnd.bind(document.querySelector('#input_red_y'), 'value', 'red_y', 'change', false, parseInt);
+    models.dnd.bind(document.querySelector('#input_blue_x'), 'value', 'blue_x', 'change', false, parseInt);
+    models.dnd.bind(document.querySelector('#input_blue_y'), 'value', 'blue_y', 'change', false, parseInt);
 
-    models.dnd.bind('value', input_red_x, 'input_red_x.value', 'red_x', [ 'change' ]);
-    models.dnd.bind('value', input_red_y, 'input_red_y.value', 'red_y', [ 'change' ]);
-    models.dnd.bind('value', input_blue_x, 'input_blue_x.value', 'blue_x', [ 'change' ]);
-    models.dnd.bind('value', input_blue_y, 'input_blue_y.value', 'blue_y', [ 'change' ]);
+    _addSocketBinding(models.dnd, 'red_x');
+    _addSocketBinding(models.dnd, 'red_y');
+    _addSocketBinding(models.dnd, 'blue_x');
+    _addSocketBinding(models.dnd, 'blue_y');
 
-//    models.model.bind('test', socket.$binds, 'socket.$binds.test', 'labelText', [ 'binding' ]);
-
-    red_transform = _DnDFactory({
+    red_interface = _DnDFactory({
         tTgt: document.querySelector('#rect_red'),
-        onDrop: function _onDrop() {
-            red_transform.dispatchEvent({
-                type: 'new_xy'
-            });
-        }
+        binding: red_binding = _define(new _EventTarget, 'event', 'red_moved')
     });
 
-    red_transform.mixWith(_EventTarget);
+    models.dnd.bind(red_binding, 'x', 'red_x', red_binding.event);
+    models.dnd.bind(red_binding, 'y', 'red_y', red_binding.event);
 
-    models.dnd.bind('x', red_transform, 'red_transform.x', 'red_x', [ 'new_xy' ]);
-    models.dnd.bind('y', red_transform, 'red_transform.y', 'red_y', [ 'new_xy' ]);
-
-    blue_transform = _DnDFactory({
+    blue_interface = _DnDFactory({
         tTgt: document.querySelector('#rect_blue'),
-        onDrop: function _onDrop() {
-            blue_transform.dispatchEvent({
-                type: 'new_xy'
-            });
-        }
+        binding: blue_binding = _define(new _EventTarget, 'event', 'blue_moved')
     });
 
-    blue_transform.mixWith(_EventTarget);
+    models.dnd.bind(blue_binding, 'x', 'blue_x', blue_binding.event);
+    models.dnd.bind(blue_binding, 'y', 'blue_y', blue_binding.event);
 
-    models.dnd.bind('x', blue_transform, 'blue_transform.x', 'blue_x', [ 'new_xy' ]);
-    models.dnd.bind('y', blue_transform, 'blue_transform.y', 'blue_y', [ 'new_xy' ]);
+    document.querySelector('.to-top').addEventListener('click', function _() {
+        red_interface.y = 0;
+    });
+
+    document.querySelector('.to-right').addEventListener('click', function _() {
+        red_interface.x = document.body.clientWidth - 200;
+    });
+
+    document.querySelector('.to-bottom').addEventListener('click', function _() {
+        red_interface.y = document.body.clientHeight - 200;
+    });
+
+    document.querySelector('.to-left').addEventListener('click', function _() {
+        red_interface.x = 0;
+    });
 }
 
-var red_transform,
-    blue_transform;
+var red_binding,
+    blue_binding,
+    red_interface,
+    blue_interface;
+
+//1000	609	851	120
