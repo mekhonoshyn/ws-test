@@ -44,18 +44,26 @@ var _log = console.log.bind(console);
 })();
 
 _define(WebSocket.prototype, 'addField', function _addField(model, key, name) {
-    var _value;
+    var _value,
+        _msg = {
+            type: 'binding',
+            data: {
+                bindKey: null,
+                bindValue: null
+            }
+        };
 
     _define(this.$binds, key, function _getValue() {
         return _value;
     }, function _setValue(value) {
-        (this.readyState === 1) && this.send({
-            type: 'binding',
-            data: {
-                bindKey: key,
-                bindValue: _value = value
-            }
-        });
+        _value = value;
+
+        if (this.readyState === 1) {
+            _msg.data.bindKey = key;
+            _msg.data.bindValue = value;
+
+            this.send(_msg);
+        }
     }.bind(this));
 
     model.bind(this.$binds, key, name, 'binding');
