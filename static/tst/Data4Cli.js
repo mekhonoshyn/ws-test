@@ -1,44 +1,40 @@
 /**
- * created by mekhonoshyn on 11/10/14.
+ * created by mekhonoshyn on 11/14/14.
  */
 
-function _Data(fields) {
+function _Data(fields, socket) {
     _define(this, '$binds', {});
 
-    fields && fields.length && fields.forEach(this.addField, this);
+    fields && fields.length && fields.forEach(function _forEach(fieldDef) {
+        var _name = fieldDef.name,
+            _value = (new (fieldDef.value.constructor)).valueOf(),
+            _listeners = [];
+
+        _define(this.$binds, _name, _listeners);
+
+        _define(this, _name, function _getValue() {
+            return _value;
+        }, function _setValue(value) {
+            var _key;
+
+            if (value.isArray) {
+                _value = value[0];
+                _key = value[1];
+            } else {
+                _value = value;
+            }
+
+            _listeners.forEach(function _forEach(listener) {
+                if (listener.key !== _key) {
+                    listener.target[listener.property] = listener.rConverter ? listener.rConverter(_value) : _value;
+                }
+            });
+        });
+
+        socket.addField(this, fieldDef.key, _name);
+    }, this);
 }
 
-_define(_Data.prototype, 'addField', function _addField(fieldDef) {
-    var _key = fieldDef.key,
-        _name = fieldDef.name,
-        _value = fieldDef.value,
-        _listeners = [];
-
-    _define(this.$binds, _name, _listeners);
-
-    _define(this, _name, function _getValue() {
-        return _value;
-    }, function _setValue(value) {
-        var _key;
-
-        if (value.isArray) {
-            _value = value[0];
-            _key = value[1];
-        } else {
-            _value = value;
-        }
-
-        _listeners.forEach(function _forEach(listener) {
-            if (listener.key !== _key) {
-                listener.target[listener.property] = listener.rConverter ? listener.rConverter(_value) : _value;
-            }
-        });
-    });
-
-    (typeof socket !== 'undefined') && socket.addField(this, _key, _name);
-});
-
-//bind 'property' property of 'target' target to field 'fieldName' and update field value on happening events 'events'
 _define(_Data.prototype, 'bind', function _bind(target, property, fieldName, events, rConverter, wConverter) {
     var _listeners = this.$binds[fieldName],
         _key = _hash();

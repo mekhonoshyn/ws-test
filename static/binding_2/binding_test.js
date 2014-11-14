@@ -12,7 +12,10 @@ socket.onopen = function _onOpen(event) {
         data: {
             type: 'model',
             data: {
-                name: 'dnd'
+                type: 'structure',
+                data: {
+                    name: 'dnd'
+                }
             }
         }
     });
@@ -48,18 +51,41 @@ var handlers = {
         _handle(data);
     },
     model: function _modelHandler(data) {
-        _log('received model structure:', data);
+        _log('received model response:', data);
+
+        handlers['model:' + data.type](data.data);
+    },
+    'model:structure': function _modelStructureHandler(data) {
+        _log('received model structure response:', data);
 
         models[data.name] = _assemblyModel(data.definition);
 
         _onModelLoad();
+
+//        socket.send({
+//            type: 'request',
+//            data: {
+//                type: 'model',
+//                data: {
+//                    type: 'data',
+//                    data: {
+//                        name: data.name
+//                    }
+//                }
+//            }
+//        });
+    },
+    'model:data': function _modelDataHandler(data) {
+        _log('received model data response:', data);
     },
     binding: function _bindingHandler(data) {
         _log('received binding update:', data);
 
         socket.$binds[data.bindKey] = data.bindValue;
 
-        socket.$binds.dispatchEvent(data);
+        socket.$binds.dispatchEvent({
+            type: 'binding'
+        });
     },
     unknown: function _defaultHandler(data) {
         _log('default socket onMessage handler for data:', data);
@@ -70,7 +96,7 @@ function _assemblyModel(definition) {
     var root;
 
     if (definition.bindRoot) {
-        root = new _Data(definition.fields);
+        root = new _Data(definition.fields, socket);
     }
 
     return root;

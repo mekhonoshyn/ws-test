@@ -6,8 +6,10 @@ var smth = {};
 
 smth.addField = smth.addField;
 smth.$binds = smth.$binds;
+smth.$fields = smth.$fields;
 smth.$keys = smth.$keys;
 smth.bind = smth.bind;
+smth.send = smth.send;
 
 smth.$listeners = smth.$listeners;
 smth.watch = smth.watch;
@@ -23,6 +25,9 @@ smth.mixWith = smth.mixWith;
 smth.dnd = smth.dnd;
 smth.bindValue = smth.bindValue;
 smth.isSocket = smth.isSocket;
+
+smth.attachClient = smth.attachClient;
+smth.detachClient = smth.detachClient;
 
 var require = require;
 var module = module;

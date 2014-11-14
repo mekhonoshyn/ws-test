@@ -1,3 +1,5 @@
+(typeof _define === 'undefined') && (_define = require('../../define'));
+
 function _EventTarget() {
     _define(this, '$types', {});
 }
@@ -46,3 +48,5 @@ _define(_EventTarget.prototype, 'dispatchEvent', function dispatchEvent(event) {
         }
     }
 );
+
+(typeof module !== 'undefined') && (module.exports = _EventTarget);
