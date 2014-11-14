@@ -43,6 +43,24 @@ var _log = console.log.bind(console);
     });
 })();
 
+_define(WebSocket.prototype, 'addField', function _addField(model, key, name) {
+    var _value;
+
+    _define(this.$binds, key, function _getValue() {
+        return _value;
+    }, function _setValue(value) {
+        (this.readyState === 1) && this.send({
+            type: 'binding',
+            data: {
+                bindKey: key,
+                bindValue: _value = value
+            }
+        });
+    }.bind(this));
+
+    model.bind(this.$binds, key, name, 'binding');
+});
+
 //_define(Object.prototype, 'extendBy', function _extendBy(src) {
 //    Object.keys(src).forEach(function _forEach(key) {
 //        this[key] || (this[key] = src[key]);

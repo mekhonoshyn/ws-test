@@ -5,29 +5,27 @@
 function _Data(fields) {
     _define(this, '$binds', {});
 
-    _define(this, '$keys', {});
-
     fields && fields.length && fields.forEach(this.addField, this);
 }
 
 _define(_Data.prototype, 'addField', function _addField(fieldDef) {
-    var _value = fieldDef.value,
+    var _key = fieldDef.key,
+        _name = fieldDef.name,
+        _value = fieldDef.value,
         _listeners = [];
 
-    _define(this.$binds, fieldDef.name, _listeners);
+    _define(this.$binds, _name, _listeners);
 
-    _define(this.$keys, fieldDef.name, fieldDef.key);
-
-    _define(this, fieldDef.name, function _getValue() {
+    _define(this, _name, function _getValue() {
         return _value;
-    }, function _setValue(input) {
+    }, function _setValue(value) {
         var _key;
 
-        if (input.isArray) {
-            _value = input[0];
-            _key = input[1];
+        if (value.isArray) {
+            _value = value[0];
+            _key = value[1];
         } else {
-            _value = input;
+            _value = value;
         }
 
         _listeners.forEach(function _forEach(listener) {
@@ -36,6 +34,8 @@ _define(_Data.prototype, 'addField', function _addField(fieldDef) {
             }
         });
     });
+
+    (typeof socket !== 'undefined') && socket.addField(this, _key, _name);
 });
 
 //bind 'property' property of 'target' target to field 'fieldName' and update field value on happening events 'events'

@@ -4,6 +4,6 @@
     "dependencies": {
         "ws": "latest",
         "node-static": "latest",
-        "drag-n-drop": "git://github.com/mekhonoshyn/useful-utils.git#DnD"
+        "drag-n-drop": "git://github.com/mekhonoshyn/useful-utils.git#DnD-B"
     }
 }

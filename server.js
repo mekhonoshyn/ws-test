@@ -1,15 +1,15 @@
-var http = require('http');
-var nodeStatic = require('node-static');
-var nsServer = new nodeStatic.Server('.');
+//var http = require('http');
+//var nodeStatic = require('node-static');
+//var nsServer = new nodeStatic.Server('.');
 var webSocket = require('ws');
 var wsServer = new webSocket.Server({
     port: 8082
 });
 var hash = require('./hash');
 
-http.createServer(function (req, res) {
-    nsServer.serve(req, res);
-}).listen(8081);
+//http.createServer(function (req, res) {
+//    nsServer.serve(req, res);
+//}).listen(8081);
 
 wsServer.on('connection', function (ws) {
     var id = hash();

@@ -76,34 +76,6 @@ function _assemblyModel(definition) {
     return root;
 }
 
-function _socketField(key) {
-    var _value;
-
-    return {
-        get: function _get() {
-            return _value;
-        },
-        set: function _set(value) {
-            (socket.readyState === 1) && socket.send({
-                type: 'binding',
-                data: {
-                    bindKey: key,
-                    bindValue: _value = value
-                }
-            });
-        }
-    };
-}
-
-function _addSocketBinding(model, fieldName) {
-    var _key = model.$keys[fieldName],
-        _field = _socketField(_key);
-
-    _define(socket.$binds, _key, _field.get, _field.set);
-
-    model.bind(socket.$binds, _key, fieldName, 'binding');
-}
-
 var models = {};
 
 function _onModelLoad() {
@@ -112,14 +84,10 @@ function _onModelLoad() {
     models.dnd.bind(document.querySelector('#input_blue_x'), 'value', 'blue_x', 'change', false, parseInt);
     models.dnd.bind(document.querySelector('#input_blue_y'), 'value', 'blue_y', 'change', false, parseInt);
 
-    _addSocketBinding(models.dnd, 'red_x');
-    _addSocketBinding(models.dnd, 'red_y');
-    _addSocketBinding(models.dnd, 'blue_x');
-    _addSocketBinding(models.dnd, 'blue_y');
-
     red_interface = _DnDFactory({
         tTgt: document.querySelector('#rect_red'),
-        binding: red_binding = _define(new _EventTarget, 'event', 'red_moved')
+        binding: red_binding = _define(new _EventTarget, 'event', 'red_moved'),
+        interface: true
     });
 
     models.dnd.bind(red_binding, 'x', 'red_x', red_binding.event);
@@ -127,7 +95,8 @@ function _onModelLoad() {
 
     blue_interface = _DnDFactory({
         tTgt: document.querySelector('#rect_blue'),
-        binding: blue_binding = _define(new _EventTarget, 'event', 'blue_moved')
+        binding: blue_binding = _define(new _EventTarget, 'event', 'blue_moved'),
+        interface: true
     });
 
     models.dnd.bind(blue_binding, 'x', 'blue_x', blue_binding.event);
@@ -154,5 +123,3 @@ var red_binding,
     blue_binding,
     red_interface,
     blue_interface;
-
-//1000	389	661	90
