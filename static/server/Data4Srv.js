@@ -2,10 +2,13 @@
  * created by mekhonoshyn on 11/14/14.
  */
 
-var _hash = require('../../hash');
-var _define = require('../../define');
+var _log = require('../general/log'),
+    _hash = require('../general/hash'),
+    _define = require('../general/define');
 
 function _Data(fieldsDef) {
+    'use strict';
+
     _define(this, '$binds', {});
     _define(this, '$fields', fieldsDef);
 
@@ -37,37 +40,31 @@ function _Data(fieldsDef) {
     }, this);
 }
 
-_define(_Data.prototype, 'attachClient', function _attachClient(client) {
-    this.$fields.forEach(function _forEach(fieldDef) {
-        client.addField(this, fieldDef.key, fieldDef.name);
-    }, this);
-});
-
-_define(_Data.prototype, 'detachClient', function _detachClient(client) {
-//
-});
-
 _define(_Data.prototype, 'bind', function _bind(target, property, fieldName, events, rConverter, wConverter) {
     var _listeners = this.$binds[fieldName],
         _key = _hash();
+
+    _log('binding listeners for key', _key);
 
     _listeners.push({
         key: _key,
         target: target,
         property: property,
-        events: events && ((events.isArray && events.length) ? events : [ events ] ).map(function _map(event) {
-            var _handler = function () {
-//                console.log(this.constructor.name, fieldName);
+        removers: events && ((events.isArray && events.length) ? events : [ events ] ).map(function _map(event) {
+            var _value = [ 0, _key ],
+                _handler = (wConverter ? function () {
+                    _value[0] = wConverter(target[property]);
 
-                this[fieldName] = [ wConverter ? wConverter(target[property]) : target[property], _key ];
-            }.bind(this);
+                    this[fieldName] = _value;
+                } : function () {
+                    _value[0] = target[property];
+
+                    this[fieldName] = _value;
+                }).bind(this);
 
             target.addEventListener(event, _handler);
 
-            return {
-                event: event,
-                handler: _handler
-            };
+            return target.removeEventListener.bind(target, event, _handler);
         }, this),
         rConverter: rConverter
     });
@@ -75,6 +72,8 @@ _define(_Data.prototype, 'bind', function _bind(target, property, fieldName, eve
     target[property] = rConverter ? rConverter(this[fieldName]) : this[fieldName];
 
     return function _unbind() {
+        _log('unbinding listeners for key', _key);
+
         var _index = _listeners.length;
 
         for (var i = 0; i < _index; i++) {
@@ -87,8 +86,8 @@ _define(_Data.prototype, 'bind', function _bind(target, property, fieldName, eve
 
         var listener = _listeners.splice(_index, 1)[0];
 
-        listener && listener.events && listener.events.length && listener.events.forEach(function _forEach(event) {
-            listener.target.removeEventListener(event.event, event.handler);
+        listener && listener.removers && listener.removers.forEach(function _forEach(remover) {
+            remover();
         });
     };
 });

@@ -2,7 +2,7 @@
  * created by mekhonoshyn on 11/12/14.
  */
 
-var hash = require('../hash');
+var hash = require('../static/general/hash');
 
 module.exports = {
     "bindRoot": true,

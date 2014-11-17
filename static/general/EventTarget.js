@@ -1,6 +1,8 @@
-(typeof _define === 'undefined') && (_define = require('../../define'));
+(typeof _define === 'undefined') && (_define = require('./define'));
 
 function _EventTarget() {
+    'use strict';
+
     _define(this, '$types', {});
 }
 

@@ -2,10 +2,12 @@
  * created by mekhonoshyn on 11/14/14.
  */
 
-function _Data(fields, socket) {
+function _Data(fieldsDef, socket) {
+    'use strict';
+
     _define(this, '$binds', {});
 
-    fields && fields.length && fields.forEach(function _forEach(fieldDef) {
+    fieldsDef && fieldsDef.length && fieldsDef.forEach(function _forEach(fieldDef) {
         var _name = fieldDef.name,
             _value = (new (fieldDef.value.constructor)).valueOf(),
             _listeners = [];
@@ -43,17 +45,21 @@ _define(_Data.prototype, 'bind', function _bind(target, property, fieldName, eve
         key: _key,
         target: target,
         property: property,
-        events: events && ((events.isArray && events.length) ? events : [ events ] ).map(function _map(event) {
-            var _handler = function () {
-                this[fieldName] = [ wConverter ? wConverter(target[property]) : target[property], _key ];
-            }.bind(this);
+        removers: events && ((events.isArray && events.length) ? events : [ events ] ).map(function _map(event) {
+            var _value = [ 0, _key ],
+                _handler = (wConverter ? function () {
+                    _value[0] = wConverter(target[property]);
+
+                    this[fieldName] = _value;
+                } : function () {
+                    _value[0] = target[property];
+
+                    this[fieldName] = _value;
+                }).bind(this);
 
             target.addEventListener(event, _handler);
 
-            return {
-                event: event,
-                handler: _handler
-            };
+            return target.removeEventListener.bind(target, event, _handler);
         }, this),
         rConverter: rConverter
     });
@@ -73,8 +79,8 @@ _define(_Data.prototype, 'bind', function _bind(target, property, fieldName, eve
 
         var listener = _listeners.splice(_index, 1)[0];
 
-        listener && listener.events && listener.events.length && listener.events.forEach(function _forEach(event) {
-            listener.target.removeEventListener(event.event, event.handler);
+        listener && listener.removers && listener.removers.forEach(function _forEach(remover) {
+            remover();
         });
     };
 });

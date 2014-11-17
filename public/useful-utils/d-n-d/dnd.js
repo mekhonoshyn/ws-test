@@ -40,6 +40,8 @@ SOFTWARE.
  */
 
 _DnDFactory = (function _DnDFactoryInitializer() {
+    'use strict';
+
     var mouseMoveEvent = 'mousemove',
         mouseUpEvent = 'mouseup',
         mouseDownEvent = 'mousedown',

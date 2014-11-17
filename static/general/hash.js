@@ -3,6 +3,8 @@
  */
 
 function _hash() {
+    'use strict';
+
     return parseInt(String(Math.random()).slice(2)).toString(16).toUpperCase();
 }
 

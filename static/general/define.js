@@ -3,6 +3,8 @@
  */
 
 function _define(context, property, getter, setter) {
+    'use strict';
+
     var definition = {};
 
     if (setter) {
