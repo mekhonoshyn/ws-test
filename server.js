@@ -15,47 +15,10 @@ var _EventTarget = require('./static/binding_2/EventTarget');
 //    nsServer.serve(req, res);
 //}).listen(8081);
 
-(function _overrideSend() {
-    var _originalSend = WebSocket.prototype.send;
-
-    _define(WebSocket.prototype, 'send', function _send(data) {
-        _originalSend.call(this, JSON.stringify(data));
-    });
-})();
-
-_define(WebSocket.prototype, 'addField', function _addField(model, key, name) {
-//    _log(arguments);
-
-    var _value,
-        _msg = {
-            type: 'binding',
-            data: {
-                bindKey: null,
-                bindValue: null
-            }
-        };
-
-    _define(this.$binds, key, function _getValue() {
-        return _value;
-    }, function _setValue(value) {
-        _value = value;
-
-//        if (this.readyState === 1) {
-//            _msg.data.bindKey = key;
-//            _msg.data.bindValue = value;
-//
-//            this.send(_msg);
-//        }
-    }.bind(this));
-
-    model.bind(this.$binds, key, name, 'binding');
-});
+require('./static/binding_2/Setup');
 
 WSServer.on('connection', function (client) {
     var _id = _hash();
-
-//    _log(JSON.stringify(Object.keys(client.constructor.prototype)));
-//    _log(JSON.stringify(client.constructor.name));
 
     _log('connection opened:', _id);
 
@@ -136,12 +99,14 @@ var handlers = {
         _log('received model data request:', data);
     },
     binding: function _bindingHandler(client, data) {
-        _log('received binding update:', data);
+        client.denySending = true;
 
         client.$binds[data.bindKey] = data.bindValue;
 
+        client.denySending = false;
+
         client.$binds.dispatchEvent({
-            type: 'binding'
+            type: 'binding:' + data.bindKey
         });
     },
     unknown: function _defaultHandler(client, data) {

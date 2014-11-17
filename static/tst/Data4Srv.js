@@ -57,6 +57,8 @@ _define(_Data.prototype, 'bind', function _bind(target, property, fieldName, eve
         property: property,
         events: events && ((events.isArray && events.length) ? events : [ events ] ).map(function _map(event) {
             var _handler = function () {
+//                console.log(this.constructor.name, fieldName);
+
                 this[fieldName] = [ wConverter ? wConverter(target[property]) : target[property], _key ];
             }.bind(this);
 

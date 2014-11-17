@@ -61,30 +61,19 @@ var handlers = {
         models[data.name] = _assemblyModel(data.definition);
 
         _onModelLoad();
-
-//        socket.send({
-//            type: 'request',
-//            data: {
-//                type: 'model',
-//                data: {
-//                    type: 'data',
-//                    data: {
-//                        name: data.name
-//                    }
-//                }
-//            }
-//        });
     },
     'model:data': function _modelDataHandler(data) {
         _log('received model data response:', data);
     },
     binding: function _bindingHandler(data) {
-        _log('received binding update:', data);
+        socket.denySending = true;
 
         socket.$binds[data.bindKey] = data.bindValue;
 
+        socket.denySending = false;
+
         socket.$binds.dispatchEvent({
-            type: 'binding'
+            type: 'binding:' + data.bindKey
         });
     },
     unknown: function _defaultHandler(data) {

@@ -2,6 +2,9 @@
  * created by mekhonoshyn on 11/10/14.
  */
 
+(typeof _define === 'undefined') && (_define = require('../../define'));
+(typeof WebSocket === 'undefined') && (WebSocket = require('ws'));
+
 _define(Array.prototype, 'isArray', true);
 
 (function _overrideSend() {
@@ -27,7 +30,7 @@ _define(WebSocket.prototype, 'addField', function _addField(model, key, name) {
     }, function _setValue(value) {
         _value = value;
 
-        if (this.readyState === 1) {
+        if (this.readyState === 1 && !this.denySending) {
             _msg.data.bindKey = key;
             _msg.data.bindValue = value;
 
@@ -35,5 +38,5 @@ _define(WebSocket.prototype, 'addField', function _addField(model, key, name) {
         }
     }.bind(this));
 
-    model.bind(this.$binds, key, name, 'binding');
+    model.bind(this.$binds, key, name, 'binding:' + key);
 });
