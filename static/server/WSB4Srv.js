@@ -66,10 +66,11 @@ function _WSB4Srv(client, models) {
             _definition = require('../../models/' + _name),
             _fields = _definition.fields,
             _model = models[_name] || (
-                        _log('model "', _name, '" added to list of shared models') || (models[_name] = {
-                        definition: _definition,
+                    _log('model "', _name, '" added to list of shared models') ||
+                    (models[_name] = {
+//                        definition: _definition,
                         detachFns: {},
-                        fields: _fields,
+//                        fields: _fields,
                         instance: new _Data4Srv(_fields)
                     })
                 );
