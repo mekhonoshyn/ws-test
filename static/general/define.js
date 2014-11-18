@@ -2,10 +2,12 @@
  * created by mekhonoshyn on 11/14/14.
  */
 
-function _define(context, property, getter, setter) {
+function _define(context, property, getter, setter, configurable) {
     'use strict';
 
-    var definition = {};
+    var definition = {
+        configurable: !!configurable
+    };
 
     if (setter) {
         definition.get = getter;

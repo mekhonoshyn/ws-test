@@ -2,7 +2,8 @@
  * created by mekhonoshyn on 11/17/14.
  */
 
-var _define = require('../general/define'),
+var _log = require('../general/log'),
+    _define = require('../general/define'),
     _EventTarget = require('../general/EventTarget'),
     _Data4Srv = require('./Data4Srv');
 
@@ -29,19 +30,23 @@ function _WSB4Srv(client, models) {
             _msgData.bindValue = value;
 
             _denySending || client.send(_msg);
-        });
+        }, true);
 
-        return model.bind(_binds, key, name, key);
+        var unbindFn = model.bind(_binds, key, name, key);
+
+        _log('field "', name, ':', key, '" added to client "', client.id, '" bindings');
+
+        return function() {
+            unbindFn();
+
+            delete _binds[key];
+
+            _log('field "', name, ':', key, '" removed from client "', client.id, '" bindings');
+        };
     }
 
-    function _attach(modelFieldsDef, modelInstance) {
-        modelFieldsDef.forEach(function _forEach(fieldDef) {
-            _unbinds.push(_addField(modelInstance, fieldDef.key, fieldDef.name));
-        });
-    }
-
-    var _binds = new _EventTarget,
-        _unbinds = [],
+    var _models = {},
+        _binds = new _EventTarget,
         _denySending = false;
 
     client.addHandler('binding', function _bindingHandler(data) {
@@ -59,7 +64,17 @@ function _WSB4Srv(client, models) {
     client.addHandler('model:structure', function _modelStructureHandler(data) {
         var _name = data.name,
             _definition = require('../../models/' + _name),
-            _model = models[_name] || (models[_name] = new _Data4Srv(_definition.fields));
+            _fields = _definition.fields,
+            _model = models[_name] || (
+                        _log('model "', _name, '" added to list of shared models') || (models[_name] = {
+                        definition: _definition,
+                        detachFns: {},
+                        fields: _fields,
+                        instance: new _Data4Srv(_fields)
+                    })
+                );
+
+        _models[_name] = _model;
 
         this.send({
             type: 'model:structure',
@@ -69,16 +84,44 @@ function _WSB4Srv(client, models) {
             }
         });
 
-        _attach(_definition.fields, _model);
-    });
-
-    client.on('close', function _detachAll() {
-        _unbinds.forEach(function _forEach(unbind) {
-            unbind();
+        var removeFieldFns = _fields.map(function _map(fieldDef) {
+            return _addField(_model.instance, fieldDef.key, fieldDef.name);
         });
 
-        _unbinds.length = 0;
+        _model.detachFns[this.id] = (function _detachClientWrapper(fieldsLength) {
+            return function _detachClient() {
+                while (fieldsLength--) {
+                    removeFieldFns.splice(0, 1)[0]();
+                }
+            }
+        })(_fields.length);
+
+        _log('client "', this.id, '" attached to model "', _name, '"');
     });
+
+    function _detachModel(name) {
+        var _detachFns = _models[name].detachFns;
+
+        _detachFns[client.id]();
+
+        delete _detachFns[client.id];
+
+        delete _models[name];
+
+        _log('client "', client.id, '" detached from model "', name, '"');
+
+        if (!_detachFns.length) {
+            delete models[name];
+
+            _log('model "', name, '" destroyed as unclaimed');
+        }
+    }
+
+    function _detachAllModels() {
+        Object.keys(_models).forEach(_detachModel);
+    }
+
+    client.on('close', _detachAllModels);
 
     return client;
 }
