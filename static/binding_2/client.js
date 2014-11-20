@@ -4,35 +4,11 @@
 
 'use strict';
 
-var models = {},
-    socket = _WSB4Cli(_WS4Cli('ws://localhost:8082'));
+var models = {};
 
-socket.addHandler('model:structure', function _modelStructureHandler(data) {
-    _log('received model structure response:', data);
+var socket = _WSC('ws://localhost:8082', models);
 
-    models[data.name] = new _Data(data.definition.fields, this);
-
-    _onModelLoad();
-});
-
-socket.addHandler('binding', function _bindingHandler(data) {
-    this.denySending = true;
-
-    this.$binds[data.bindKey] = data.bindValue;
-
-    this.denySending = false;
-
-    this.$binds.dispatchEvent({
-        type: data.bindKey
-    });
-});
-
-socket.send({
-    type: 'model:structure',
-    data: {
-        name: 'dnd'
-    }
-});
+socket.getModel('dnd', _onModelLoad);
 
 function _onModelLoad() {
     models.dnd.bind(document.querySelector('#input_red_x'), 'value', 'red_x', 'change', false, parseInt);

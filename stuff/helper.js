@@ -28,6 +28,7 @@ smth.attachClient = smth.attachClient;
 smth.detachClient = smth.detachClient;
 smth.dTgt = smth.dTgt;
 smth.gTgt = smth.gTgt;
+smth.getModel = smth.getModel;
 
 var require = require;
 var module = module;

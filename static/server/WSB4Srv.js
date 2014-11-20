@@ -61,44 +61,52 @@ function _WSB4Srv(client, models) {
         });
     });
 
-    client.addHandler('model:structure', function _modelStructureHandler(data) {
-        var _name = data.name,
-            _definition = require('../../models/' + _name),
-            _fields = _definition.fields,
-            _model = models[_name] || (
+    client.addHandler('model:structure', (function _modelStructureHandlerWrapper() {
+        var _msgData = {
+                name: null,
+                definition: null,
+                callbackKey: null
+            },
+            _msg = {
+                type: 'model:structure',
+                data: _msgData
+            };
+
+        return function _modelStructureHandler(data) {
+            var _name = data.name,
+                _definition = require('../../models/' + _name),
+                _fields = _definition.fields,
+                _model = models[_name] || (
                     _log('model "', _name, '" added to list of shared models') ||
                     (models[_name] = {
-//                        definition: _definition,
                         detachFns: {},
-//                        fields: _fields,
                         instance: new _Data4Srv(_fields)
                     })
                 );
 
-        _models[_name] = _model;
+            _models[_name] = _model;
 
-        this.send({
-            type: 'model:structure',
-            data: {
-                name: _name,
-                definition: _definition
-            }
-        });
+            _msgData.name = _name;
+            _msgData.definition = _definition;
+            _msgData.callbackKey = data.callbackKey;
 
-        var removeFieldFns = _fields.map(function _map(fieldDef) {
-            return _addField(_model.instance, fieldDef.key, fieldDef.name);
-        });
+            this.send(_msg);
 
-        _model.detachFns[this.id] = (function _detachClientWrapper(fieldsLength) {
-            return function _detachClient() {
-                while (fieldsLength--) {
-                    removeFieldFns.splice(0, 1)[0]();
+            var removeFieldFns = _fields.map(function _map(fieldDef) {
+                return _addField(_model.instance, fieldDef.key, fieldDef.name);
+            });
+
+            _model.detachFns[this.id] = (function _detachClientWrapper(fieldsLength) {
+                return function _detachClient() {
+                    while (fieldsLength--) {
+                        removeFieldFns.splice(0, 1)[0]();
+                    }
                 }
-            }
-        })(_fields.length);
+            })(_fields.length);
 
-        _log('client "', this.id, '" attached to model "', _name, '"');
-    });
+            _log('client "', this.id, '" attached to model "', _name, '"');
+        };
+    })());
 
     function _detachModel(name) {
         var _detachFns = _models[name].detachFns;
@@ -123,8 +131,6 @@ function _WSB4Srv(client, models) {
     }
 
     client.on('close', _detachAllModels);
-
-    return client;
 }
 
 module.exports = _WSB4Srv;

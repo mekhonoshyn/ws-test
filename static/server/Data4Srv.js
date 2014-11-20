@@ -10,7 +10,6 @@ function _Data(fieldsDef) {
     'use strict';
 
     _define(this, '$binds', {});
-    _define(this, '$fields', fieldsDef);
 
     fieldsDef && fieldsDef.length && fieldsDef.forEach(function _forEach(fieldDef) {
         var _name = fieldDef.name,
