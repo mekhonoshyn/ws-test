@@ -13,7 +13,7 @@ var models = {};
 require('./static/general/setup');
 require('./static/general/wss')(8082, models);
 
-_log(process.hrtime());
+//_log(process.hrtime());
 
 _log('server is listening ports 8081, 8082');
 
@@ -59,18 +59,40 @@ _log('server is listening ports 8081, 8082');
 
 
 
+//var worldDateTime = require('./static/general/DateTime')({
+//    YY: 2014,
+//    MM: 11,
+//    DD: 20,
+//    hh: 15,
+//    mm: 48,
+//    ss: 45
+//});
+
+var worldDateTime = require('./static/general/DateTime')(models);
+
+_log(Object.keys(worldDateTime));
+_log(worldDateTime.id);
+
+worldDateTime.attachModel('date-time');
+
 var NanoTimer = require('nanotimer');
 
 var timer = new NanoTimer();
 
-var time = process.hrtime(),
-    diff,
-    __log = function () {
-        diff = process.hrtime(time);
+timer.setInterval(function _() {
+    worldDateTime.inc();
 
-        time = process.hrtime();
+    _log(worldDateTime.out());
+}, [], '1s');
 
-        console.log(Math.abs(diff[1] * 1e-6));
-    };
+//var time = process.hrtime(),
+//    diff,
+//    __log = function () {
+//        diff = process.hrtime(time);
+//
+//        time = process.hrtime();
+//
+//        _log(Math.abs(diff[1] * 1e-6));
+//    };
 
-timer.setInterval(__log, [], '1s');
+//timer.setInterval(__log, [], '1s');

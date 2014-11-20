@@ -29,6 +29,12 @@ smth.detachClient = smth.detachClient;
 smth.dTgt = smth.dTgt;
 smth.gTgt = smth.gTgt;
 smth.getModel = smth.getModel;
+smth.YY = smth.YY;
+smth.MM = smth.MM;
+smth.DD = smth.DD;
+smth.hh = smth.hh;
+smth.mm = smth.mm;
+smth.ss = smth.ss;
 
 var require = require;
 var module = module;

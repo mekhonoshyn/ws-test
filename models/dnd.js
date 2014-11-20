@@ -5,27 +5,27 @@
 var hash = require('../static/general/hash');
 
 module.exports = {
-    "bindRoot": true,
-    "fields": [
+    bindRoot: true,
+    fields: [
         {
-            "key": hash(),
-            "name": "red_x",
-            "value": 100
+            name: 'red_x',
+            value: 100
         },
         {
-            "key": hash(),
-            "name": "red_y",
-            "value": 200
+            name: 'red_y',
+            value: 200
         },
         {
-            "key": hash(),
-            "name": "blue_x",
-            "value": 300
+            name: 'blue_x',
+            value: 300
         },
         {
-            "key": hash(),
-            "name": "blue_y",
-            "value": 400
+            name: 'blue_y',
+            value: 400
         }
-    ]
+    ].map(function (field) {
+        field.key = hash();
+            
+        return field;
+    })
 };
