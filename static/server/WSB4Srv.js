@@ -2,7 +2,7 @@
  * created by mekhonoshyn on 11/17/14.
  */
 
-var _log = require('../general/log'),
+var _print = require('../general/print'),
     _hash = require('../general/hash'),
     _define = require('../general/define'),
     _EventTarget = require('../general/EventTarget'),
@@ -37,14 +37,14 @@ function _WSB4Srv(client, models) {
 
         var unbindFn = model.bind(_binds, key, name, key);
 
-        _log('field "', name, ':', key, '" added to client "', _id, '" bindings');
+        _print('field "', name, ':', key, '" added to client "', _id, '" bindings');
 
         return function() {
             unbindFn();
 
             delete _binds[key];
 
-            _log('field "', name, ':', key, '" removed from client "', _id, '" bindings');
+            _print('field "', name, ':', key, '" removed from client "', _id, '" bindings');
         };
     }
 
@@ -71,7 +71,7 @@ function _WSB4Srv(client, models) {
 
         var _fields = data.definition.fields,
             _model = models[_name] ||
-                _log('model "', _name, '" added to list of shared models') ||
+                _print('model "', _name, '" added to list of shared models') ||
                 (models[_name] = {
                     detachFns: {},
                     instance: new _Data4Srv(_fields)
@@ -91,7 +91,7 @@ function _WSB4Srv(client, models) {
             }
         })(_fields.length);
 
-        _log('client "', _id, '" attached to model "', _name, '"');
+        _print('client "', _id, '" attached to model "', _name, '"');
     }
 
     client.addHandler('model:structure', (function _modelStructureHandlerWrapper() {
@@ -118,12 +118,12 @@ function _WSB4Srv(client, models) {
 
         delete _models[name];
 
-        _log('client "', _id, '" detached from model "', name, '"');
+        _print('client "', _id, '" detached from model "', name, '"');
 
         if (!_detachFns.length) {
             delete models[name];
 
-            _log('model "', name, '" destroyed as unclaimed');
+            _print('model "', name, '" destroyed as unclaimed');
         }
     }
 

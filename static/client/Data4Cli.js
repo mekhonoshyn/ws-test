@@ -45,7 +45,7 @@ _define(_Data.prototype, 'bind', function _bind(target, property, fieldName, eve
         key: _key,
         target: target,
         property: property,
-        removers: events && ((events.isArray && events.length) ? events : [ events ] ).map(function _map(event) {
+        removeListenerFns: events && ((events.isArray && events.length) ? events : [ events ] ).map(function _map(event) {
             var _value = [ 0, _key ],
                 _handler = (wConverter ? function () {
                     _value[0] = wConverter(target[property]);
@@ -79,7 +79,7 @@ _define(_Data.prototype, 'bind', function _bind(target, property, fieldName, eve
 
         var listener = _listeners.splice(_index, 1)[0];
 
-        listener && listener.removers && listener.removers.forEach(function _forEach(remover) {
+        listener && listener.removeListenerFns && listener.removeListenerFns.forEach(function _forEach(remover) {
             remover();
         });
     };

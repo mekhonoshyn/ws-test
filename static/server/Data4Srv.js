@@ -2,23 +2,25 @@
  * created by mekhonoshyn on 11/14/14.
  */
 
-var _log = require('../general/log'),
+var _print = require('../general/print'),
     _hash = require('../general/hash'),
     _define = require('../general/define');
 
 function _Data(fieldsDef) {
     'use strict';
 
-    _define(this, '$binds', {});
+    var _model = this;
+
+    _define(_model, '$binds', {});
 
     fieldsDef && fieldsDef.length && fieldsDef.forEach(function _forEach(fieldDef) {
         var _name = fieldDef.name,
             _value = fieldDef.value,
             _listeners = [];
 
-        _define(this.$binds, _name, _listeners);
+        _define(_model.$binds, _name, _listeners);
 
-        _define(this, _name, function _getValue() {
+        _define(_model, _name, function _getValue() {
             return _value;
         }, function _setValue(value) {
             var _key;
@@ -31,63 +33,58 @@ function _Data(fieldsDef) {
             }
 
             _listeners.forEach(function _forEach(listener) {
-                if (listener.key !== _key) {
-                    listener.target[listener.property] = listener.rConverter ? listener.rConverter(_value) : _value;
-                }
+                (listener.key !== _key) && listener.writeData && listener.writeData();
             });
         });
-    }, this);
+    });
 }
 
-_define(_Data.prototype, 'bind', function _bind(target, property, fieldName, events, rConverter, wConverter) {
-    var _listeners = this.$binds[fieldName],
-        _key = _hash();
-
-    _log('binding listeners for key', _key);
-
-    _listeners.push({
-        key: _key,
-        target: target,
-        property: property,
-        removers: events && ((events.isArray && events.length) ? events : [ events ] ).map(function _map(event) {
+_define(_Data.prototype, 'bind', function _bind(target, property, fieldName, modelMayReadOn, modelMayWrite, rConverter, wConverter, isSource) {
+    var _model = this,
+        _key = _hash(),
+        _listeners = _model.$binds[fieldName],
+        _writeData = modelMayWrite ? (wConverter ? function () {
+            target[property] = wConverter(_model[fieldName]);
+        } : function () {
+            target[property] = _model[fieldName];
+        }) : null,
+        _removeListenerFns = modelMayReadOn && ((modelMayReadOn.isArray && modelMayReadOn.length) ? modelMayReadOn : [ modelMayReadOn ] ).map(function _map(event) {
             var _value = [ 0, _key ],
-                _handler = (wConverter ? function () {
-                    _value[0] = wConverter(target[property]);
+                _handler = rConverter ? function () {
+                    _value[0] = rConverter(target[property]);
 
-                    this[fieldName] = _value;
+                    _model[fieldName] = _value;
                 } : function () {
                     _value[0] = target[property];
 
-                    this[fieldName] = _value;
-                }).bind(this);
+                    _model[fieldName] = _value;
+                };
 
             target.addEventListener(event, _handler);
 
             return target.removeEventListener.bind(target, event, _handler);
-        }, this),
-        rConverter: rConverter
-    });
-
-    target[property] = rConverter ? rConverter(this[fieldName]) : this[fieldName];
-
-    return function _unbind() {
-        _log('unbinding listeners for key', _key);
-
-        var _index = _listeners.length;
-
-        for (var i = 0; i < _index; i++) {
-            if (_listeners[i].key === _key) {
-                _index = i;
-
-                break;
-            }
-        }
-
-        var listener = _listeners.splice(_index, 1)[0];
-
-        listener && listener.removers && listener.removers.forEach(function _forEach(remover) {
-            remover();
+        }),
+        _index = _listeners.push({
+            key: _key,
+            writeData: _writeData
         });
+
+    _print('add listener for field "', fieldName, ':', _key, '" on property "', property, '"');
+
+    isSource || (_writeData && _writeData());
+
+    return _removeListenerFns ? function () {
+        _print('remove listener for field "', fieldName, ':', _key, '" on property "', property, '"');
+
+        _listeners.splice(_index, 1);
+
+        _removeListenerFns.forEach(function _forEach(removeListener) {
+            removeListener();
+        });
+    } : function () {
+        _print('remove listener for field "', fieldName, ':', _key, '" on property "', property, '"');
+
+        _listeners.splice(_index, 1);
     };
 });
 

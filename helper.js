@@ -36,6 +36,14 @@ smth.hh = smth.hh;
 smth.mm = smth.mm;
 smth.ss = smth.ss;
 smth.FIELD_NAMES = smth.FIELD_NAMES;
+smth.modelMayReadOn = smth.modelMayReadOn;
+smth.readConverter = smth.readConverter;
+smth.modelMayWrite = smth.modelMayWrite;
+smth.writeConverter = smth.writeConverter;
+smth.removeOnUnbind = smth.removeOnUnbind;
+smth.modelName = smth.modelName;
+smth.isSource = smth.isSource;
+smth.bindModel = smth.bindModel;
 
 var path = path;
 /**

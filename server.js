@@ -58,22 +58,42 @@ _log('server is listening ports 8081, 8082');
 //}, 100);
 
 
-
-//var worldDateTime = require('./static/general/DateTime')({
-//    YY: 2014,
-//    MM: 11,
-//    DD: 20,
-//    hh: 15,
-//    mm: 48,
-//    ss: 45
-//});
-
-var worldDateTime = require('./static/general/DateTime')(models);
+var worldDateTime = require('./static/general/DateTime')(models/*, {
+    YY: 2014,
+    MM: 12,
+    DD: 31,
+    hh: 23,
+    mm: 59,
+    ss: 55
+}*//*, {
+    YY: 2014,
+    MM: 11,
+    DD: 20,
+    hh: 15,
+    mm: 48,
+    ss: 45
+}*/);
 
 _log(Object.keys(worldDateTime));
-_log(worldDateTime.id);
+//_log(worldDateTime.id);
 
-worldDateTime.attachModel('date-time');
+worldDateTime.bindModel({
+    modelName: 'date-time'
+}, (function (mapping) {
+    [ 'year', 'month', 'day', 'hour', 'minute', 'second' ].forEach(function _forEach(propName) {
+        mapping[propName] = {
+            propName: propName,
+            modelMayReadOn: [ propName + '-changed' ]
+        }
+    });
+    return mapping;
+}({})), {
+    isSource: true,
+    modelMayWrite: false,
+    readConverter: null,
+    writeConverter: null,
+    removeOnUnbind: false
+});
 
 var NanoTimer = require('nanotimer');
 
