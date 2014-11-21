@@ -107,6 +107,15 @@ function _DateTime(now) {
         initialValue: now && now.ss
     });
 
+    var __bi = new _EventTarget;
+
+    _defineRO(__bi, 'year', __YY.val);
+    _defineRO(__bi, 'month', __MM.val);
+    _defineRO(__bi, 'day', __DD.val);
+    _defineRO(__bi, 'hour', __hh.val);
+    _defineRO(__bi, 'minute', __mm.val);
+    _defineRO(__bi, 'second', __ss.val);
+
     return {
         inc: __ss.inc,
         val: function _val() {
@@ -114,7 +123,8 @@ function _DateTime(now) {
         },
         out: function _out() {
             return [__DD.out(), '.', __MM.out(), '.', __YY.out(), ' ', __hh.out(), ':', __mm.out(), ':', __ss.out()].join('');
-        }
+        },
+        bi: __bi
     };
 }
 
@@ -129,13 +139,76 @@ module.exports = function (models, initials) {
 var _log = require('./log'),
     _hash = require('./hash'),
     _define = require('./define'),
+    _defineRO = require('./defineRO'),
     _EventTarget = require('./EventTarget'),
-    _Data4Srv = require('../server/Data4Srv');
+    _Data4Srv = require('../server/Data4Srv'),
+    path = require('path');
 
 function _prepare4Binding(object, models) {
     'use strict';
 
     var _id = object.id || (object.id = _hash());
+
+    var _bindingInterface = object.bi;
+
+    var _boundModels = {};
+
+    function _bindModelField(model, modelField, objectProperty, events, removeOnUnbind) {
+        var unbindFn = model.bind(_bindingInterface, objectProperty, modelField, events);
+
+        _log([ 'object`s (', _id, ') property "', objectProperty, '" bound to model field "', modelField, '"' ].join(''));
+
+        return function _onUnbind() {
+            unbindFn();
+
+            removeOnUnbind && (delete _bindingInterface[objectProperty]);
+
+            _log([ 'object`s [id:', _id, '] property "', objectProperty, '" unbound from model field "', modelField, '"' ].join(''));
+        };
+    }
+
+    function _bindModel(data, mapping) {
+        var _modelName = data.name,
+            _modelDef = require(path.join(__dirname, '..', '..', 'models', _modelName)),
+            _modelFields = _modelDef.fields,
+            _modelObject = models[_modelName] || _log([ 'model "', _modelName, '" added to list of shared models' ].join('')) || (models[_modelName] = {
+                unbindFns: {},
+                instance: new _Data4Srv(_modelFields)
+            }),
+            _mapping;
+
+        if (typeof mapping === 'object') {
+            _mapping = mapping;
+        } else {
+            _mapping = {};
+
+            _modelFields.forEach(function _forEach(fieldDef) {
+                _mapping[fieldDef.name] = fieldDef[mapping];
+            });
+        }
+
+        _boundModels[_modelName] = _modelObject;
+
+        var unbindModelFieldFns = _modelFields.map(function _map(fieldDef) {
+            return _bindModelField(_modelObject.instance, fieldDef.name, _mapping[fieldDef.name], []);
+        });
+
+        _modelObject.unbindFns[_id] = function _unbindObject() {
+            var _unbindModelFieldFn;
+
+            while (_unbindModelFieldFn = unbindModelFieldFns.pop()) {
+                _unbindModelFieldFn();
+            }
+        };
+
+        _log([ 'object [id:', _id, '] bound to model "', _modelName, '"' ].join(''));
+    }
+
+
+
+
+
+
 
     object.attachModel = function _attachModel(data) {
         var _name = data.name;

@@ -35,6 +35,15 @@ smth.DD = smth.DD;
 smth.hh = smth.hh;
 smth.mm = smth.mm;
 smth.ss = smth.ss;
+smth.FIELD_NAMES = smth.FIELD_NAMES;
+
+var path = path;
+/**
+ @param {...*} [parts]
+ @return {String}
+ */
+path.join = function(parts) {};
 
 var require = require;
 var module = module;
+var __dirname = __dirname;
