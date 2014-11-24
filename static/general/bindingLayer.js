@@ -9,6 +9,14 @@ var _print = require('./print'),
     _Data4Srv = require('../server/Data4Srv'),
     _path = require('path');
 
+var _optionKeys = [
+    'modelMayReadOn',
+    'modelMayWrite',
+    'readConverter',
+    'writeConverter',
+    'removeOnUnbind'
+];
+
 function _BindingLayer(bindingTarget, bindingInterface) {
     'use strict';
 
@@ -40,7 +48,9 @@ function _BindingLayer(bindingTarget, bindingInterface) {
     /**
      *
      * @param models - {Object} //global models
-     * @param modelName - {String}
+     * @param modelData - {
+     *                      name - {String} //model name
+     *                    }
      * @param mapping - {
      *                      %MODEL_FIELD_NAME%: {
      *                                              propName: {String},         //object property name to bind model field on
@@ -57,47 +67,28 @@ function _BindingLayer(bindingTarget, bindingInterface) {
      * @private
      */
 
-    function _bindModel(models, modelName, mapping, options) {
-        var _modelDef = require(_path.join(__dirname, '..', '..', 'models', modelName)),
-            _modelFields = _modelDef.fields,
-            _modelObject = models[modelName] || _print('model "', modelName, '" added to list of shared models') || (models[modelName] = {
+    function _bindModel(models, modelData, mapping, options) {
+        var _modelName = modelData.name,
+            _modelFields = (modelData.def || (modelData.def = require(_path.join(__dirname, '..', '..', 'models', _modelName)))).fields,
+            _modelObject = models[_modelName] || _print('model "', _modelName, '" added to list of shared models') || (models[_modelName] = {
                 unbindFns: {},
                 instance: new _Data4Srv(_modelFields)
-            }),
-            _mapping;
-
-        if (typeof mapping === 'object') {
-            _mapping = mapping;
-        } else {
-            _mapping = {};
-
-            _modelFields.forEach(function _forEach(fieldDef) {
-                _mapping[fieldDef.name] = {
-                    propName: fieldDef[mapping]
-                };
             });
-        }
 
-        Object.keys(_mapping).forEach(function _forEach(mappingKey) {
-            var _mappingItem = _mapping[mappingKey];
+        Object.keys(mapping).forEach(function _forEach(mappingKey) {
+            var _mappingItem = mapping[mappingKey];
 
-            _mappingItem.propName = (_mappingItem.propName === undefined) ? mappingKey : _mappingItem.propName;
-
-            [
-                'modelMayReadOn',
-                'modelMayWrite',
-                'readConverter',
-                'writeConverter',
-                'removeOnUnbind'
-            ].forEach(function _forEach(optionKey) {
-                    _mappingItem[optionKey] = (_mappingItem[optionKey] === undefined) ? options[optionKey] : _mappingItem[optionKey];
-                });
+            _optionKeys.forEach(function _forEach(optionKey) {
+                if (_mappingItem[optionKey] === undefined) {
+                    _mappingItem[optionKey] = options && options[optionKey];
+                }
+            });
         });
 
-        _boundModels[modelName] = _modelObject;
+        _boundModels[_modelName] = _modelObject;
 
         var _unbindModelFieldFns = _modelFields.map(function _map(fieldDef) {
-            return _bindModelField(_modelObject.instance, fieldDef.name, _mapping[fieldDef.name], options.isSource);
+            return _bindModelField(_modelObject.instance, fieldDef.name, mapping[fieldDef.name], options && options.isSource);
         }).filter(function _filter(unbindModelFieldFn) {
             return !!unbindModelFieldFn;
         });
@@ -110,7 +101,7 @@ function _BindingLayer(bindingTarget, bindingInterface) {
             }
         });
 
-        _print('object [id:', _id, '] bound to model "', modelName, '"');
+        _print('object [id:', _id, '] bound to model "', _modelName, '"');
     }
 
     function _unbindModel(models, modelName) {

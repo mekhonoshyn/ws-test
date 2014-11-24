@@ -44,6 +44,7 @@ smth.removeOnUnbind = smth.removeOnUnbind;
 smth.modelName = smth.modelName;
 smth.isSource = smth.isSource;
 smth.bindModel = smth.bindModel;
+smth.defs = smth.defs;
 
 var path = path;
 /**

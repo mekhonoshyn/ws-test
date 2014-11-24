@@ -4,7 +4,11 @@
 
 var WebSocket = require('ws'),
     _define = require('../general/define'),
-    _log = require('../general/log');
+    _log = require('../general/log'),
+    _print = require('../general/print'),
+    _EventTarget = require('../general/EventTarget'),
+    _BindingLayer = require('../general/BindingLayer'),
+    _path = require('path');
 
 _define(WebSocket.prototype, 'send', (function () {
     var _send = WebSocket.prototype.send;
@@ -18,7 +22,7 @@ _define(WebSocket.prototype, 'send', (function () {
     }
 }()));
 
-function _WS4Srv(client) {
+function _WS4Srv(client, options) {
     'use strict';
 
     _log('connection opened:', client.id);
@@ -42,6 +46,67 @@ function _WS4Srv(client) {
     client.on('close', function () {
         _log('connection closed:', client.id);
     });
+
+    if (options.makeBindable) {
+        (function () {
+            var __bi = new _EventTarget,
+                __denySending = false,
+                __send = function _send(type, data) {
+                    client.send({
+                        type: type,
+                        data: data
+                    });
+                };
+
+            _BindingLayer(client, __bi);
+
+            client.addHandler('binding', function _bindingHandler(data) {
+                __denySending = true;
+
+                __bi[data.bindKey] = data.bindValue;
+
+                __denySending = false;
+
+                __bi.dispatchEvent({
+                    type: data.bindKey
+                });
+            });
+
+            client.addHandler('model:structure', function _modelStructureHandler(modelData) {
+                var _mapping = {};
+
+                (modelData.def || (modelData.def = require(_path.join(__dirname, '..', '..', 'models', modelData.name)))).fields.forEach(function _forEach(fieldDef) {
+                    var _key = fieldDef.key,
+                        _value;
+
+                    _define(__bi, _key, function _getter() {
+                        return _value;
+                    }, function _setter(value) {
+                        _value = value;
+
+                        __denySending || __send('binding', {
+                            bindKey: _key,
+                            bindValue: value
+                        });
+                    }, true);
+
+                    _mapping[fieldDef.name] = {
+                        propName: _key,
+                        modelMayReadOn: _key
+                    };
+                });
+
+                this.bindModel(options.models, modelData, _mapping, {
+                    removeOnUnbind: true,
+                    modelMayWrite: true
+                });
+
+                __send('model:structure', modelData);
+            });
+
+            client.on('close', client.unbindAllModels);
+        }());
+    }
 }
 
 module.exports = _WS4Srv;

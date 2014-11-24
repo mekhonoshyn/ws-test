@@ -94,11 +94,13 @@ var worldDateTime = require('./static/general/DateTime')(/*{
 //_log(Object.keys(worldDateTime));
 //_log(worldDateTime.id);
 
-worldDateTime.bindModel(globalModels, 'date-time', (function (mapping) {
+worldDateTime.bindModel(globalModels, {
+    name: 'date-time'
+}, (function (mapping) {
     [ 'year', 'month', 'day', 'hour', 'minute', 'second' ].forEach(function _forEach(propName) {
         mapping[propName] = {
             propName: propName,
-            modelMayReadOn: [ propName + '-changed' ]
+            modelMayReadOn: 'changed:' + propName
         }
     });
     return mapping;
