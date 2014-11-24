@@ -9,10 +9,10 @@ var _print = require('./print'),
     _Data4Srv = require('../server/Data4Srv'),
     _path = require('path');
 
-function _bindingLayer(object, bindingInterface, models) {
+function _BindingLayer(bindingTarget, bindingInterface) {
     'use strict';
 
-    var _id = object.id || _hash(),
+    var _id = _hash(),
         _boundModels = {};
 
     function _bindModelField(model, modelField, options, isSource) {
@@ -20,20 +20,27 @@ function _bindingLayer(object, bindingInterface, models) {
 
         _print('object [id:', _id, '] property "', options.propName, '" bound to model field "', modelField, '"');
 
-        return function _onUnbind() {
+        return _unbindFn ? (options.removeOnUnbind ? function () {
             _unbindFn();
 
-            options.removeOnUnbind && (delete bindingInterface[options.propName]);
+            delete bindingInterface[options.propName];
 
             _print('object`s [id:', _id, '] property "', options.propName, '" unbound from model field "', modelField, '"');
-        };
+        } : function () {
+            _unbindFn();
+
+            _print('object`s [id:', _id, '] property "', options.propName, '" unbound from model field "', modelField, '"');
+        }) : (!!options.removeOnUnbind && function () {
+            delete bindingInterface[options.propName];
+
+            _print('object`s [id:', _id, '] property "', options.propName, '" unbound from model field "', modelField, '"');
+        });
     }
 
     /**
      *
-     * @param data - {
-     *                  modelName: {String}
-     *               }
+     * @param models - {Object} //global models
+     * @param modelName - {String}
      * @param mapping - {
      *                      %MODEL_FIELD_NAME%: {
      *                                              propName: {String},         //object property name to bind model field on
@@ -50,11 +57,10 @@ function _bindingLayer(object, bindingInterface, models) {
      * @private
      */
 
-    function _bindModel(data, mapping, options) {
-        var _modelName = data.modelName,
-            _modelDef = require(_path.join(__dirname, '..', '..', 'models', _modelName)),
+    function _bindModel(models, modelName, mapping, options) {
+        var _modelDef = require(_path.join(__dirname, '..', '..', 'models', modelName)),
             _modelFields = _modelDef.fields,
-            _modelObject = models[_modelName] || _print('model "', _modelName, '" added to list of shared models') || (models[_modelName] = {
+            _modelObject = models[modelName] || _print('model "', modelName, '" added to list of shared models') || (models[modelName] = {
                 unbindFns: {},
                 instance: new _Data4Srv(_modelFields)
             }),
@@ -88,40 +94,33 @@ function _bindingLayer(object, bindingInterface, models) {
                 });
         });
 
-        _boundModels[_modelName] = _modelObject;
+        _boundModels[modelName] = _modelObject;
 
         var _unbindModelFieldFns = _modelFields.map(function _map(fieldDef) {
-            var _fieldMapping = _mapping[fieldDef.name];
-
-            return _bindModelField(
-                _modelObject.instance,
-                fieldDef.name,
-                _fieldMapping,
-                options.isSource
-            );
+            return _bindModelField(_modelObject.instance, fieldDef.name, _mapping[fieldDef.name], options.isSource);
+        }).filter(function _filter(unbindModelFieldFn) {
+            return !!unbindModelFieldFn;
         });
 
-        _modelObject.unbindFns[_id] = function _unbindObject() {
+        _unbindModelFieldFns.length && (_modelObject.unbindFns[_id] = function _unbindObject() {
             var _unbindModelFieldFn;
 
             while (_unbindModelFieldFn = _unbindModelFieldFns.pop()) {
                 _unbindModelFieldFn();
             }
-        };
+        });
 
-        _print('object [id:', _id, '] bound to model "', _modelName, '"');
+        _print('object [id:', _id, '] bound to model "', modelName, '"');
     }
 
-    function _unbindModel(modelName) {
+    function _unbindModel(models, modelName) {
         var _unbindFns = _boundModels[modelName].unbindFns;
 
-        _unbindFns[_id]();
-
-        delete _unbindFns[_id];
+        _unbindFns[_id] && (_unbindFns[_id]() || (delete _unbindFns[_id]));
 
         delete _boundModels[modelName];
 
-        _print('object "', _id, '" detached from model "', modelName, '"');
+        _print('object "', _id, '" unbound from model "', modelName, '"');
 
         if (!_unbindFns.length) {
             delete models[modelName];
@@ -130,13 +129,15 @@ function _bindingLayer(object, bindingInterface, models) {
         }
     }
 
-    function _unbindAllModels() {
-        Object.keys(_boundModels).forEach(_unbindModel);
+    function _unbindAllModels(models) {
+        Object.keys(_boundModels).forEach(function (modelName) {
+            _unbindModel(models, modelName);
+        });
     }
 
-    object.bindModel = _bindModel;
-    object.unbindModel = _unbindModel;
-    object.unbindAllModels = _unbindAllModels;
+    bindingTarget.bindModel = _bindModel;
+    bindingTarget.unbindModel = _unbindModel;
+    bindingTarget.unbindAllModels = _unbindAllModels;
 }
 
-module.exports = _bindingLayer;
+module.exports = _BindingLayer;

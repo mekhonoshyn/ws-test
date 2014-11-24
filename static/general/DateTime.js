@@ -2,6 +2,10 @@
  * created by mekhonoshyn on 11/20/14.
  */
 
+var _defineRO = require('./defineRO'),
+    _BindingLayer = require('./BindingLayer'),
+    _EventTarget = require('./EventTarget');
+
 function _DTItem(config) {
     function _val(value) {
         if (value !== undefined) {
@@ -41,17 +45,17 @@ function _DTItem(config) {
     (function () {
         var _initialValue = config.initialValue;
 
-        if (_initialValue === undefined || _initialValue < _minValue || _initialValue > _maxValue()) {
+        if (typeof _initialValue !== 'number' || _initialValue < _minValue || _initialValue > _maxValue()) {
             _val(_minValue);
         } else {
             _val(_initialValue);
         }
-    })();
+    }());
 
     return _this;
 }
 
-function _DateTime(now) {
+function _DateTime(current, options) {
     var _DD_by_MM = (function (array) {
         var result = {};
         array.forEach(function (value, index) {
@@ -63,7 +67,7 @@ function _DateTime(now) {
     var __YY = _DTItem({
         minValue: 1,
         maxValue: Infinity,
-        initialValue: now && now.YY,
+        initialValue: current && current.YY,
         length: 4,
         onChange: function _onChange(__YY) {
             _DD_by_MM[2] = __YY.val() % 4 ? 28 : 29;
@@ -74,7 +78,7 @@ function _DateTime(now) {
         upperLevel: __YY,
         minValue: 1,
         maxValue: 12,
-        initialValue: now && now.MM
+        initialValue: current && current.MM
     });
 
     var __DD = _DTItem({
@@ -83,59 +87,51 @@ function _DateTime(now) {
         maxValue: function _maxValue() {
             return _DD_by_MM[__MM.val()];
         },
-        initialValue: now && now.DD
+        initialValue: current && current.DD
     });
 
     var __hh = _DTItem({
         upperLevel: __DD,
         minValue: 0,
         maxValue: 23,
-        initialValue: now && now.hh
+        initialValue: current && current.hh
     });
 
     var __mm = _DTItem({
         upperLevel: __hh,
         minValue: 0,
         maxValue: 59,
-        initialValue: now && now.mm
+        initialValue: current && current.mm
     });
 
     var __ss = _DTItem({
         upperLevel: __mm,
         minValue: 0,
         maxValue: 59,
-        initialValue: now && now.ss
+        initialValue: current && current.ss
     });
 
-    var __bi = new _EventTarget;
+    if (options.makeBindable) {
+        (function () {
+            var __bi = new _EventTarget;
 
-    _defineRO(__bi, 'year', __YY.val);
-    _defineRO(__bi, 'month', __MM.val);
-    _defineRO(__bi, 'day', __DD.val);
-    _defineRO(__bi, 'hour', __hh.val);
-    _defineRO(__bi, 'minute', __mm.val);
-    _defineRO(__bi, 'second', __ss.val);
+            _defineRO(__bi, 'year', __YY.val);
+            _defineRO(__bi, 'month', __MM.val);
+            _defineRO(__bi, 'day', __DD.val);
+            _defineRO(__bi, 'hour', __hh.val);
+            _defineRO(__bi, 'minute', __mm.val);
+            _defineRO(__bi, 'second', __ss.val);
 
-    return {
-        inc: __ss.inc,
-        val: function _val() {
-            return 0;
-        },
-        out: function _out() {
-            return [__DD.out(), '.', __MM.out(), '.', __YY.out(), ' ', __hh.out(), ':', __mm.out(), ':', __ss.out()].join('');
-        },
-        bi: __bi
+            _BindingLayer(this, __bi);
+        }.call(this));
+    }
+
+    this.inc = __ss.inc;
+    this.out = function _out() {
+        return [__DD.out(), '.', __MM.out(), '.', __YY.out(), ' ', __hh.out(), ':', __mm.out(), ':', __ss.out()].join('');
     };
 }
 
-var _defineRO = require('./defineRO'),
-    _bindingLayer = require('./bindingLayer');
-    _EventTarget = require('./EventTarget');
-
-module.exports = function (models, initials) {
-    var dtObject = _DateTime(initials);
-
-    _bindingLayer(dtObject, dtObject.bi, models);
-
-    return dtObject;
+module.exports = function (current, options) {
+    return new _DateTime(current, options);
 };

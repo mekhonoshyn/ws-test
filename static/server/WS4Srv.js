@@ -6,6 +6,18 @@ var WebSocket = require('ws'),
     _define = require('../general/define'),
     _log = require('../general/log');
 
+_define(WebSocket.prototype, 'send', (function () {
+    var _send = WebSocket.prototype.send;
+
+    return function (data) {
+        if (this.readyState !== 1) {
+            return;
+        }
+
+        _send.call(this, JSON.stringify(data));
+    }
+}()));
+
 function _WS4Srv(client) {
     'use strict';
 
@@ -23,14 +35,6 @@ function _WS4Srv(client) {
 
     client.on('message', function (rawData) {
         _handle(JSON.parse(rawData));
-    });
-
-    _define(client, 'send', function _send(data) {
-        if (this.readyState !== 1) {
-            return;
-        }
-
-        WebSocket.prototype.send.call(this, JSON.stringify(data));
     });
 
     _define(client, 'addHandler', _define.bind(null, _handlers));

@@ -4,14 +4,14 @@
 
 var _log = require('./static/general/log');
 
-var models = {};
+var globalModels = {};
 
 //http.createServer(function (req, res) {
 //    nsServer.serve(req, res);
 //}).listen(8081);
 
 require('./static/general/setup');
-require('./static/general/wss')(8082, models);
+require('./static/general/wss')(8082, globalModels);
 
 //_log(process.hrtime());
 
@@ -58,7 +58,7 @@ _log('server is listening ports 8081, 8082');
 //}, 100);
 
 
-var worldDateTime = require('./static/general/DateTime')(models/*, {
+var worldDateTime = require('./static/general/DateTime')(/*{
     YY: 2014,
     MM: 12,
     DD: 31,
@@ -72,14 +72,29 @@ var worldDateTime = require('./static/general/DateTime')(models/*, {
     hh: 15,
     mm: 48,
     ss: 45
-}*/);
+}*/null, {
+    makeBindable: true
+});
+//var worldDateTime = require('./static/general/DateTime')(models/*, {
+//    YY: 2014,
+//    MM: 12,
+//    DD: 31,
+//    hh: 23,
+//    mm: 59,
+//    ss: 55
+//}*//*, {
+//    YY: 2014,
+//    MM: 11,
+//    DD: 20,
+//    hh: 15,
+//    mm: 48,
+//    ss: 45
+//}*/);
 
-_log(Object.keys(worldDateTime));
+//_log(Object.keys(worldDateTime));
 //_log(worldDateTime.id);
 
-worldDateTime.bindModel({
-    modelName: 'date-time'
-}, (function (mapping) {
+worldDateTime.bindModel(globalModels, 'date-time', (function (mapping) {
     [ 'year', 'month', 'day', 'hour', 'minute', 'second' ].forEach(function _forEach(propName) {
         mapping[propName] = {
             propName: propName,
@@ -93,6 +108,20 @@ worldDateTime.bindModel({
     readConverter: null,
     writeConverter: null,
     removeOnUnbind: false
+});
+
+worldDateTime.unbindAllModels(globalModels);
+
+worldDateTime.bindModel(globalModels, 'date-time', (function (mapping) {
+    [ 'year', 'month', 'day', 'hour', 'minute', 'second' ].forEach(function _forEach(propName) {
+        mapping[propName] = {
+            propName: propName,
+            modelMayReadOn: [ propName + '-changed' ]
+        }
+    });
+    return mapping;
+}({})), {
+    isSource: true
 });
 
 var NanoTimer = require('nanotimer');

@@ -33,25 +33,25 @@ function _Data(fieldsDef) {
             }
 
             _listeners.forEach(function _forEach(listener) {
-                (listener.key !== _key) && listener.writeData && listener.writeData();
+                (listener.key !== _key) && listener.writeData();
             });
         });
     });
 }
 
-_define(_Data.prototype, 'bind', function _bind(target, property, fieldName, modelMayReadOn, modelMayWrite, rConverter, wConverter, isSource) {
+_define(_Data.prototype, 'bind', function _bind(target, property, fieldName, modelMayReadOn, modelMayWrite, readConverter, writeConverter, isSource) {
     var _model = this,
         _key = _hash(),
         _listeners = _model.$binds[fieldName],
-        _writeData = modelMayWrite ? (wConverter ? function () {
-            target[property] = wConverter(_model[fieldName]);
+        _writeData = !!modelMayWrite ? (writeConverter ? function () {
+            target[property] = writeConverter(_model[fieldName]);
         } : function () {
             target[property] = _model[fieldName];
         }) : null,
-        _removeListenerFns = modelMayReadOn && ((modelMayReadOn.isArray && modelMayReadOn.length) ? modelMayReadOn : [ modelMayReadOn ] ).map(function _map(event) {
+        _removeEventListenerFns = !!modelMayReadOn && ((modelMayReadOn.isArray && modelMayReadOn.length) ? modelMayReadOn : [ modelMayReadOn ] ).map(function _map(event) {
             var _value = [ 0, _key ],
-                _handler = rConverter ? function () {
-                    _value[0] = rConverter(target[property]);
+                _handler = readConverter ? function () {
+                    _value[0] = readConverter(target[property]);
 
                     _model[fieldName] = _value;
                 } : function () {
@@ -62,9 +62,11 @@ _define(_Data.prototype, 'bind', function _bind(target, property, fieldName, mod
 
             target.addEventListener(event, _handler);
 
-            return target.removeEventListener.bind(target, event, _handler);
+            return function _removeEventListener() {
+                target.removeEventListener(event, _handler);
+            };
         }),
-        _index = _listeners.push({
+        _index = _writeData && _listeners.push({
             key: _key,
             writeData: _writeData
         });
@@ -73,19 +75,25 @@ _define(_Data.prototype, 'bind', function _bind(target, property, fieldName, mod
 
     isSource || (_writeData && _writeData());
 
-    return _removeListenerFns ? function () {
+    return _removeEventListenerFns ? (_writeData ? function () {
         _print('remove listener for field "', fieldName, ':', _key, '" on property "', property, '"');
 
         _listeners.splice(_index, 1);
 
-        _removeListenerFns.forEach(function _forEach(removeListener) {
+        _removeEventListenerFns.forEach(function _forEach(removeListener) {
             removeListener();
         });
     } : function () {
         _print('remove listener for field "', fieldName, ':', _key, '" on property "', property, '"');
 
+        _removeEventListenerFns.forEach(function _forEach(removeListener) {
+            removeListener();
+        });
+    }) : (_writeData && function () {
+        _print('remove listener for field "', fieldName, ':', _key, '" on property "', property, '"');
+
         _listeners.splice(_index, 1);
-    };
+    });
 });
 
 module.exports = _Data;
