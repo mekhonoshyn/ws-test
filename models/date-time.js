@@ -2,7 +2,7 @@
  * created by mekhonoshyn on 11/20/14.
  */
 
-var hash = require('../static/general/hash');
+var _hash = require('../static/general/hash');
 
 module.exports = {
     bindRoot: true,
@@ -16,7 +16,7 @@ module.exports = {
     ].map(function (fieldName) {
         return {
             name: fieldName,
-            key: hash()
+            key: _hash()
         };
     })
 };

@@ -2,9 +2,9 @@
  * created by mekhonoshyn on 11/20/14.
  */
 
-var _defineRO = require('./defineRO'),
-    _BindingLayer = require('./BindingLayer'),
-    _EventTarget = require('./EventTarget');
+var _defineRO = require('../general/defineRO'),
+    _BindingLayer = require('../general/BindingLayer'),
+    _EventTarget = require('../general/EventTarget');
 
 function _DTItem(config) {
     function _val(value) {

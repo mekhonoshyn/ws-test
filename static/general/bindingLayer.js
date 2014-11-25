@@ -2,133 +2,135 @@
  * created by mekhonoshyn on 11/21/14.
  */
 
-var _print = require('./print'),
-    _hash = require('./hash'),
-    _define = require('./define'),
-    _EventTarget = require('./EventTarget'),
-    _Data4Srv = require('../server/Data4Srv'),
-    _path = require('path');
+var _print = _print || require('./print'),
+    _hash = _hash || require('./hash'),
+    _define = _define || require('./define'),
 
-var _optionKeys = [
-    'modelMayReadOn',
-    'modelMayWrite',
-    'readConverter',
-    'writeConverter',
-    'removeOnUnbind'
-];
+    _EventTarget = _EventTarget || require('./EventTarget'),
+    _DataModel = _DataModel || require('./DataModel');
 
-function _BindingLayer(bindingTarget, bindingInterface) {
-    'use strict';
+var _BindingLayer = (function _BindingLayerWrapper() {
+    var _optionKeys = [
+        'modelMayReadOn',
+        'modelMayWrite',
+        'readConverter',
+        'writeConverter',
+        'doOnUnbind'
+    ];
 
-    var _id = _hash(),
-        _boundModels = {};
+    var _sharedModels = _BindingLayerWorker.models = {};
 
-    function _bindModelField(model, modelField, options, isSource) {
-        var _unbindFn = model.bind(bindingInterface, options.propName, modelField, options.modelMayReadOn, options.modelMayWrite, options.readConverter, options.writeConverter, isSource);
+    function _BindingLayerWorker(bindingTarget, bindingInterface) {
+        'use strict';
 
-        _print('object [id:', _id, '] property "', options.propName, '" bound to model field "', modelField, '"');
+        var _id = _hash(),
+            _boundModels = {};
 
-        return _unbindFn ? (options.removeOnUnbind ? function () {
-            _unbindFn();
+        function _bindModelField(model, modelField, options, isSource) {
+            var _unbindFn = model.bind(bindingInterface, options.propName, modelField, options.modelMayReadOn, options.modelMayWrite, options.readConverter, options.writeConverter, isSource);
 
-            delete bindingInterface[options.propName];
+            _print('object`s [id:', _id, '] property "', options.propName, '" bound to model field "', modelField, '"');
 
-            _print('object`s [id:', _id, '] property "', options.propName, '" unbound from model field "', modelField, '"');
-        } : function () {
-            _unbindFn();
+            return _unbindFn ? (options.doOnUnbind ? function () {
+                _unbindFn();
 
-            _print('object`s [id:', _id, '] property "', options.propName, '" unbound from model field "', modelField, '"');
-        }) : (!!options.removeOnUnbind && function () {
-            delete bindingInterface[options.propName];
+                options.doOnUnbind(options.propName);
 
-            _print('object`s [id:', _id, '] property "', options.propName, '" unbound from model field "', modelField, '"');
-        });
-    }
+                _print('object`s [id:', _id, '] property "', options.propName, '" unbound from model field "', modelField, '"');
+            } : function () {
+                _unbindFn();
 
-    /**
-     *
-     * @param models - {Object} //global models
-     * @param modelData - {
-     *                      name - {String} //model name
-     *                    }
-     * @param mapping - {
-     *                      %MODEL_FIELD_NAME%: {
-     *                                              propName: {String},         //object property name to bind model field on
-     *                                              modelMayReadOn: {Array},    //events on which model will read object`s data
-     *                                              modelMayWrite: {Boolean},   //allow model to write data on update
-     *                                              readConverter: {Function},  //function applied to convert data while transferring from object to model
-     *                                              writeConverter: {Function}, //function applied to convert data while transferring from model to object
-     *                                              removeOnUnbind: {Boolean}   //remove object property from object on unbinding model field
-     *                                          }
-     *                  }
-     * @param options - {
-     *                      isSource: true/false    //indicates should model write data during binding process
-     *                  }
-     * @private
-     */
+                _print('object`s [id:', _id, '] property "', options.propName, '" unbound from model field "', modelField, '"');
+            }) : (!!options.doOnUnbind && function () {
+                options.doOnUnbind(options.propName);
 
-    function _bindModel(models, modelData, mapping, options) {
-        var _modelName = modelData.name,
-            _modelFields = (modelData.def || (modelData.def = require(_path.join(__dirname, '..', '..', 'models', _modelName)))).fields,
-            _modelObject = models[_modelName] || _print('model "', _modelName, '" added to list of shared models') || (models[_modelName] = {
-                unbindFns: {},
-                instance: new _Data4Srv(_modelFields)
+                _print('object`s [id:', _id, '] property "', options.propName, '" unbound from model field "', modelField, '"');
+            });
+        }
+
+        /**
+         *
+         * @param modelData - {
+         *                      name - {String} //model name
+         *                    }
+         * @param mapping - {
+         *                      %MODEL_FIELD_NAME%: {
+         *                                              propName: {String},         //object property name to bind model field on
+         *                                              modelMayReadOn: {Array},    //events on which model will read object`s data
+         *                                              modelMayWrite: {Boolean},   //allow model to write data on update
+         *                                              readConverter: {Function},  //function applied to convert data while transferring from object to model
+         *                                              writeConverter: {Function}, //function applied to convert data while transferring from model to object
+         *                                              doOnUnbind: {Function}      //onUnbind callback (accepts propName as a parameter)
+         *                                          }
+         *                  }
+         * @param options - {
+         *                      isSource: true/false    //indicates should model write data during binding process
+         *                  }
+         * @private
+         */
+        function _bindModel(modelData, mapping, options) {
+            var _modelName = modelData.name,
+                _modelFields = (modelData.def || (modelData.def = require('../../models/' + _modelName))).fields,
+                _modelObject = _sharedModels[_modelName] || _print('model "', _modelName, '" added to list of shared models') || (_sharedModels[_modelName] = {
+                    unbindFns: {},
+                    instance: new _DataModel(_modelFields)
+                });
+
+            Object.keys(mapping).forEach(function _forEach(mappingKey) {
+                var _mappingItem = mapping[mappingKey];
+
+                _optionKeys.forEach(function _forEach(optionKey) {
+                    if (_mappingItem[optionKey] === undefined) {
+                        _mappingItem[optionKey] = options && options[optionKey];
+                    }
+                });
             });
 
-        Object.keys(mapping).forEach(function _forEach(mappingKey) {
-            var _mappingItem = mapping[mappingKey];
+            _boundModels[_modelName] = _modelObject;
 
-            _optionKeys.forEach(function _forEach(optionKey) {
-                if (_mappingItem[optionKey] === undefined) {
-                    _mappingItem[optionKey] = options && options[optionKey];
+            var _unbindModelFieldFns = _modelFields.map(function _map(fieldDef) {
+                return _bindModelField(_modelObject.instance, fieldDef.name, mapping[fieldDef.name], options && options.isSource);
+            }).filter(function _filter(unbindModelFieldFn) {
+                return !!unbindModelFieldFn;
+            });
+
+            _unbindModelFieldFns.length && (_modelObject.unbindFns[_id] = function _unbindObject() {
+                var _unbindModelFieldFn;
+
+                while (_unbindModelFieldFn = _unbindModelFieldFns.pop()) {
+                    _unbindModelFieldFn();
                 }
             });
-        });
 
-        _boundModels[_modelName] = _modelObject;
-
-        var _unbindModelFieldFns = _modelFields.map(function _map(fieldDef) {
-            return _bindModelField(_modelObject.instance, fieldDef.name, mapping[fieldDef.name], options && options.isSource);
-        }).filter(function _filter(unbindModelFieldFn) {
-            return !!unbindModelFieldFn;
-        });
-
-        _unbindModelFieldFns.length && (_modelObject.unbindFns[_id] = function _unbindObject() {
-            var _unbindModelFieldFn;
-
-            while (_unbindModelFieldFn = _unbindModelFieldFns.pop()) {
-                _unbindModelFieldFn();
-            }
-        });
-
-        _print('object [id:', _id, '] bound to model "', _modelName, '"');
-    }
-
-    function _unbindModel(models, modelName) {
-        var _unbindFns = _boundModels[modelName].unbindFns;
-
-        _unbindFns[_id] && (_unbindFns[_id]() || (delete _unbindFns[_id]));
-
-        delete _boundModels[modelName];
-
-        _print('object "', _id, '" unbound from model "', modelName, '"');
-
-        if (!_unbindFns.length) {
-            delete models[modelName];
-
-            _print('model "', modelName, '" destroyed as unclaimed');
+            _print('object [id:', _id, '] bound to model "', _modelName, '"');
         }
+
+        function _unbindModel(modelName) {
+            var _unbindFns = _boundModels[modelName].unbindFns;
+
+            _unbindFns[_id] && (_unbindFns[_id]() || (delete _unbindFns[_id]));
+
+            delete _boundModels[modelName];
+
+            _print('object [id:', _id, '] unbound from model "', modelName, '"');
+
+            if (!_unbindFns.length) {
+                delete _sharedModels[modelName];
+
+                _print('model "', modelName, '" destroyed as unclaimed');
+            }
+        }
+
+        function _unbindAllModels() {
+            Object.keys(_boundModels).forEach(_unbindModel);
+        }
+
+        bindingTarget.bindModel = _bindModel;
+        bindingTarget.unbindModel = _unbindModel;
+        bindingTarget.unbindAllModels = _unbindAllModels;
     }
 
-    function _unbindAllModels(models) {
-        Object.keys(_boundModels).forEach(function (modelName) {
-            _unbindModel(models, modelName);
-        });
-    }
+    return _BindingLayerWorker;
+}());
 
-    bindingTarget.bindModel = _bindModel;
-    bindingTarget.unbindModel = _unbindModel;
-    bindingTarget.unbindAllModels = _unbindAllModels;
-}
-
-module.exports = _BindingLayer;
+(typeof module !== 'undefined') && (module.exports = _BindingLayer);

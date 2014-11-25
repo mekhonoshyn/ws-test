@@ -3,7 +3,9 @@
  */
 
 function _print() {
-    console.log(Array.prototype.join.call(arguments, ''));
+    'use strict';
+
+    console.log(Array.prototype.join.call(Array.prototype.map.call(arguments, String), ''));
 }
 
 (typeof module !== 'undefined') && (module.exports = _print);
