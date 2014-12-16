@@ -11,21 +11,21 @@ function _DTItem(config) {
         if (value !== undefined) {
             _value = value;
 
-            config.onChange && config.onChange(_this);
+            (config.onChange || _interface.onChange) && (config.onChange || _interface.onChange)(_interface);
         }
 
         return _value;
     }
 
     function _out() {
-        return ('00000000' + _value).slice(-(config.length || 2));
+        return ('0000' + _value).slice(-(config.length || 2));
     }
 
     function _inc() {
         if (_value === _maxValue()) {
-            _val(_minValue);
-
             config.upperLevel && config.upperLevel.inc();
+
+            _val(_minValue);
         } else {
             _val(_value + 1);
         }
@@ -36,7 +36,7 @@ function _DTItem(config) {
         },
         _minValue = config.minValue,
         _value,
-        _this = {
+        _interface = {
             inc: _inc,
             val: _val,
             out: _out
@@ -52,7 +52,7 @@ function _DTItem(config) {
         }
     }());
 
-    return _this;
+    return _interface;
 }
 
 function _DateTime(current, options) {
@@ -111,10 +111,15 @@ function _DateTime(current, options) {
         initialValue: current && current.ss
     });
 
+    function _out() {
+        return [__DD.out(), '.', __MM.out(), '.', __YY.out(), ' ', __hh.out(), ':', __mm.out(), ':', __ss.out()].join('');
+    }
+
     if (options.makeBindable) {
         (function () {
             var __bi = new _EventTarget;
 
+            _defineRO(__bi, 'time', _out);
             _defineRO(__bi, 'year', __YY.val);
             _defineRO(__bi, 'month', __MM.val);
             _defineRO(__bi, 'day', __DD.val);
@@ -123,13 +128,17 @@ function _DateTime(current, options) {
             _defineRO(__bi, 'second', __ss.val);
 
             _BindingLayer(this, __bi);
+
+            __ss.onChange = function _onChange() {
+                __bi.dispatchEvent({
+                    type: 'time-changed'
+                });
+            };
         }.call(this));
     }
 
     this.inc = __ss.inc;
-    this.out = function _out() {
-        return [__DD.out(), '.', __MM.out(), '.', __YY.out(), ' ', __hh.out(), ':', __mm.out(), ':', __ss.out()].join('');
-    };
+    this.out = _out;
 }
 
 module.exports = function (current, options) {

@@ -13,86 +13,105 @@ function _DataModel(fieldsDef, options) {
 
     _define(_model, '$binds', {});
 
-    fieldsDef && fieldsDef.length && fieldsDef.forEach(function _forEach(fieldDef) {
-        var _name = fieldDef.name,
-            _value = (options && options.defaultValues) ? (new (fieldDef.value.constructor)).valueOf() : fieldDef.value,
-            _listeners = [];
+    fieldsDef && fieldsDef.length
 
-        _define(this.$binds, _name, _listeners);
+        && _define(_model, '$fields', [])
 
-        _define(this, _name, function _getValue() {
-            return _value;
-        }, function _setValue(value) {
-            var _key;
+        && fieldsDef.forEach(function _forEach(fieldDef, index) {
+            _define(_model.$fields, index, fieldDef.name);
 
-            if (value.isArray) {
-                _value = value[0];
-                _key = value[1];
-            } else {
-                _value = value;
-            }
+            var _name = fieldDef.name,
+                _value = (options && options.defaultValues && fieldDef.value !== null && fieldDef.value !== undefined) ? (new (fieldDef.value.constructor)).valueOf() : fieldDef.value,
+                _listeners = [];
 
-            _listeners.forEach(function _forEach(listener) {
-                (listener.key !== _key) && listener.writeData();
+            _define(_model.$binds, _name, _listeners);
+
+            _define(_model, _name, function _getValue() {
+                return _value;
+            }, function _setValue(value) {
+                var _key;
+
+                if (value.isArray) {
+                    _value = value[0];
+
+                    _key = value[1];
+                } else {
+                    _value = value;
+                }
+
+                _listeners.forEach(function _forEach(listener) {
+                    listener.key !== _key && listener.writeData();
+                });
             });
         });
-    }, _model);
 }
 
-_define(_DataModel.prototype, 'bind', function _bind(target, propName, fieldName, modelMayReadOn, modelMayWrite, readConverter, writeConverter, isSource) {
+_define(_DataModel.prototype, 'invalidate', function _invalidate(bindingInterface, fieldNames) {
+    var _model = this;
+
+    ((fieldNames && fieldNames.length) ? fieldNames : _model.$fields).forEach(function _forEach(fieldName) {
+        _model.$binds[fieldName].forEach(function _forEach(listener) {
+            listener.bi === bindingInterface && listener.writeData();
+        });
+    });
+});
+
+_define(_DataModel.prototype, 'bind', function _bind(bindingInterface, biPropName, modelFieldName, modelMayReadOn, modelMayWrite, readConverter, writeConverter, isSource) {
     var _model = this,
         _key = _hash(),
-        _listeners = _model.$binds[fieldName],
-        _writeData = !!modelMayWrite ? (writeConverter ? function () {
-            target[propName] = writeConverter(_model[fieldName]);
+        _listeners = _model.$binds[modelFieldName],
+        _writeData = !!modelMayWrite && (writeConverter ? function () {
+            bindingInterface[biPropName] = writeConverter(_model[modelFieldName]);
         } : function () {
-            target[propName] = _model[fieldName];
-        }) : null,
+            bindingInterface[biPropName] = _model[modelFieldName];
+        }),
         _removeEventListenerFns = !!modelMayReadOn && ((modelMayReadOn.isArray && modelMayReadOn.length) ? modelMayReadOn : [ modelMayReadOn ] ).map(function _map(event) {
             var _value = [ 0, _key ],
                 _handler = readConverter ? function () {
-                    _value[0] = readConverter(target[propName]);
+                    _value[0] = readConverter(bindingInterface[biPropName]);
 
-                    _model[fieldName] = _value;
+                    _model[modelFieldName] = _value;
                 } : function () {
-                    _value[0] = target[propName];
+                    _value[0] = bindingInterface[biPropName];
 
-                    _model[fieldName] = _value;
+                    _model[modelFieldName] = _value;
                 };
 
-            target.addEventListener(event, _handler);
+            bindingInterface.addEventListener(event, _handler);
 
             return function _removeEventListener() {
-                target.removeEventListener(event, _handler);
+                bindingInterface.removeEventListener(event, _handler);
             };
-        }),
-        _index = _writeData && _listeners.push({
-            key: _key,
-            writeData: _writeData
         });
 
-    _print('add listener for field "', fieldName, ':', _key, '" on property "', propName, '"');
+    _writeData && _listeners.push({
+        key: _key,
+        bi: bindingInterface,
+        writeData: _writeData
+    });
+
+    _print('add listener for field "', modelFieldName, ':', _key, '" on property "', biPropName, '"');
 
     isSource || (_writeData && _writeData());
 
     return _removeEventListenerFns ? (_writeData ? function () {
-        _print('remove listener for field "', fieldName, ':', _key, '" on property "', propName, '"');
+        _print('remove listener for field "', modelFieldName, ':', _key, '" on property "', biPropName, '"');
 
-        _listeners.splice(_index, 1);
+        _listeners.splice(_listeners.find('key', _key, true), 1);
 
         _removeEventListenerFns.forEach(function _forEach(removeListener) {
             removeListener();
         });
     } : function () {
-        _print('remove listener for field "', fieldName, ':', _key, '" on property "', propName, '"');
+        _print('remove listener for field "', modelFieldName, ':', _key, '" on property "', biPropName, '"');
 
         _removeEventListenerFns.forEach(function _forEach(removeListener) {
             removeListener();
         });
     }) : (_writeData && function () {
-        _print('remove listener for field "', fieldName, ':', _key, '" on property "', propName, '"');
+        _print('remove listener for field "', modelFieldName, ':', _key, '" on property "', biPropName, '"');
 
-        _listeners.splice(_index, 1);
+        _listeners.splice(_listeners.find('key', _key, true), 1);
     });
 });
 

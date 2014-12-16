@@ -10,7 +10,7 @@ _define(_EventTarget.prototype, 'addEventListener', function _addEventListener(t
         var array = this.$types[type];
 
         if (!array) {
-            _define(this.$types, type, array = []);
+            _define(this.$types, type, array = [], null, true);
         }
 
         if (!~array.indexOf(listener)) {

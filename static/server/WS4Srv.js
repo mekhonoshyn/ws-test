@@ -3,7 +3,6 @@
  */
 
 var WebSocket = require('ws'),
-    path = require('path'),
 
     _define = require('../general/define'),
     _print = require('../general/print'),
@@ -17,6 +16,8 @@ _define(WebSocket.prototype, 'send', (function () {
 
     return function (data) {
         if (this.readyState === 1) {
+//            _print('socket is sending message: ', JSON.stringify(data));
+
             _send.call(this, JSON.stringify(data));
         }
     };
@@ -38,7 +39,7 @@ function _WS4Srv(client, options) {
     client.on('message', function (rawData) {
         var _message = JSON.parse(rawData);
 
-        _print('client [id:', _id, '] received message: ', _message);
+//        _print('client [id:', _id, '] received message: ', JSON.stringify(_message));
 
         if (_handlers[_message.type]) {
             _handlers[_message.type].call(client, _message.data);
@@ -71,23 +72,26 @@ function _WS4Srv(client, options) {
             });
 
             client.addHandler('model:structure', function _modelStructureHandler(modelData) {
+                var _fields = (modelData.def || (modelData.def = require('../../models/' + modelData.name))).fields;
+
+                if (!_fields.length) {
+                    _print('empty model; "model:structure" request rejected');
+
+                    return;
+                }
+
                 var _mapping = {};
 
-                (modelData.def || (modelData.def = require('../../models/' + modelData.name))).fields.forEach(function _forEach(fieldDef) {
+                _fields.forEach(function _forEach(fieldDef) {
                     var _key = fieldDef.key,
-                        _value,
-                        _event = {
-                            type: _key
-                        },
-                        _data = {
-                            bindKey: _key,
-                            bindValue: null
-                        };
+                        _value;
 
                     _setAndNotify[_key] = function (value) {
                         _value = value;
 
-                        _bi.dispatchEvent(_event);
+                        _bi.dispatchEvent({
+                            type: _key
+                        });
                     };
 
                     _define(_bi, _key, function _getter() {
@@ -95,10 +99,13 @@ function _WS4Srv(client, options) {
                     }, function (value) {
                         _value = value;
 
-                        _data.bindValue = value;
-
-                        _send('binding', _data);
+                        _send('binding', {
+                            bindKey: _key,
+                            bindValue: value
+                        });
                     }, true);
+
+                    _print('bindable property "', _key, '" created');
 
                     _mapping[fieldDef.name] = {
                         propName: _key,
@@ -114,10 +121,16 @@ function _WS4Srv(client, options) {
 
                         _print('bindable property "', propName, '" removed');
                     },
-                    modelMayWrite: true
+                    modelMayWrite: true,
+                    defaultValues: false,
+                    isSource: true
                 });
 
                 _send('model:structure', modelData);
+            });
+
+            client.addHandler('model:data', function _modelDataHandler(modelName) {
+                this.invalidateModel(modelName);
             });
 
             client.on('close', client.unbindAllModels);

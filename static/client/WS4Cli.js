@@ -7,13 +7,15 @@ function _WS4Cli(socket, options) {
 
     var _handlers = {
             unknown: function _defaultHandler(data) {
-                _print('run default message handler (', data, ')');
+                _print('run default message handler (', JSON.stringify(data), ')');
             }
         },
         _queue = [];
 
     _define(socket, 'send', function _send(data) {
         if (this.readyState === 1) {
+//            _print('socket is sending message: ', JSON.stringify(data));
+
             WebSocket.prototype.send.call(this, JSON.stringify(data));
         } else {
             _print('socket queue length: ', _queue.push(data));
@@ -22,30 +24,32 @@ function _WS4Cli(socket, options) {
 
     _define(socket, 'addHandler', _define.bind(null, _handlers));
 
-    _define(socket, 'onOpen'.toLowerCase(), function _onOpen(event) {
-        _print('socket opened: ', event);
+    _define(socket, 'onOpen'.toLowerCase(), function _onOpen() {
+        _print('socket opened: ', JSON.stringify('/* put some important data here */'));
 
         if (_queue.length) {
             var _lQueue = _queue.slice();
 
             _queue.length = 0;
 
-            _lQueue.forEach(socket.send.bind(socket));
+            _lQueue.forEach(function _forEach(qItem) {
+                socket.send(qItem);
+            });
         }
     });
 
     _define(socket, 'onClose'.toLowerCase(), function _onClose() {
-        _print('socket closed: ', arguments);
+        _print('socket closed: ', JSON.stringify('/* put some important data here */'));
     });
 
     _define(socket, 'onError'.toLowerCase(), function _onError() {
-        _print('error occurred: ', arguments);
+        _print('error occurred: ', JSON.stringify('/* put some important data here */'));
     });
 
     _define(socket, 'onMessage'.toLowerCase(), function _onMessage(event) {
         var _message = JSON.parse(event.data);
 
-        _print('socket received message: ', _message);
+//        _print('socket received message: ', JSON.stringify(_message));
 
         if (_handlers[_message.type]) {
             _handlers[_message.type].call(socket, _message.data)
@@ -56,38 +60,27 @@ function _WS4Cli(socket, options) {
 
     if (options.makeBindable) {
         (function () {
-            var _callbacks = {};
-
-            _define(socket, 'getModel', (function _getModelWrapper() {
-                var _msgData = {
-                        name: null,
-                        callbackKey: null
-                    },
-                    _msg = {
-                        type: 'model:structure',
-                        data: _msgData
-                    };
-
-                return function _getModel(name, callback) {
-                    var _callBackKey = _hash();
-
-                    _callbacks[_callBackKey] = callback;
-
-                    _msgData.name = name;
-                    _msgData.callbackKey = _callBackKey;
-
-                    this.send(_msg);
-                };
-            }()));
-
-            var _bi = new _EventTarget,
-                _setAndNotify = {},
+            var _callbacks = {},
                 _send = function (type, data) {
                     socket.send({
                         type: type,
                         data: data
                     });
                 };
+
+            _define(socket, 'getModel', function _getModel(name, callback) {
+                var _callBackKey = _hash();
+
+                _callbacks[_callBackKey] = callback;
+
+                _send('model:structure', {
+                    name: name,
+                    callbackKey: _callBackKey
+                });
+            });
+
+            var _bi = new _EventTarget,
+                _setAndNotify = {};
 
             _BindingLayer(socket, _bi);
 
@@ -96,23 +89,26 @@ function _WS4Cli(socket, options) {
             });
 
             socket.addHandler('model:structure', function _modelStructureHandler(modelData) {
+                var _fields = modelData.def.fields;
+
+                if (!_fields.length) {
+                    _print('empty model; "model:structure" request rejected');
+
+                    return;
+                }
+
                 var _mapping = {};
 
-                modelData.def.fields.forEach(function _forEach(fieldDef) {
+                _fields.forEach(function _forEach(fieldDef) {
                     var _key = fieldDef.key,
-                        _value,
-                        _event = {
-                            type: _key
-                        },
-                        _data = {
-                            bindKey: _key,
-                            bindValue: null
-                        };
+                        _value;
 
                     _setAndNotify[_key] = function (value) {
                         _value = value;
 
-                        _bi.dispatchEvent(_event);
+                        _bi.dispatchEvent({
+                            type: _key
+                        });
                     };
 
                     _define(_bi, _key, function _getter() {
@@ -120,10 +116,13 @@ function _WS4Cli(socket, options) {
                     }, function (value) {
                         _value = value;
 
-                        _data.bindValue = value;
-
-                        _send('binding', _data);
+                        _send('binding', {
+                            bindKey: _key,
+                            bindValue: value
+                        });
                     }, true);
+
+                    _print('bindable property "', _key, '" created');
 
                     _mapping[fieldDef.name] = {
                         propName: _key,
@@ -139,9 +138,15 @@ function _WS4Cli(socket, options) {
 
                         _print('bindable property "', propName, '" removed');
                     },
-                    modelMayWrite: true
+                    modelMayWrite: true,
+                    defaultValues: true,
+                    isSource: true
                 });
+
+                _callbacks.extract(modelData.callbackKey)(_BindingLayer.model(modelData.name));
+
+                _send('model:data', modelData.name);
             });
-        }())
+        }());
     }
 }

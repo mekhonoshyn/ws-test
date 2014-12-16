@@ -1,5 +1,5 @@
 /**
- * Created by Sergii_Mekhonoshyn on 19-Nov-14.
+ * Created by mekhonoshyn on 19-Nov-14.
  */
 
 function _WSC(address) {

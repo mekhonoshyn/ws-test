@@ -5,7 +5,7 @@
 function _hash() {
     'use strict';
 
-    return parseInt(String(Math.random()).slice(2)).toString(16).toUpperCase();
+    return parseInt(String(Math.random()).slice(2)).toString(36).toUpperCase();
 }
 
 (typeof module !== 'undefined') && (module.exports = _hash);

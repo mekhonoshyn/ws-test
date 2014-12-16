@@ -7,6 +7,7 @@ var _hash = require('../static/general/hash');
 module.exports = {
     bindRoot: true,
     fields: [
+        'time',
         'year',
         'month',
         'day',

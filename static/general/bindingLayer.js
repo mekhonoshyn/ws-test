@@ -18,7 +18,11 @@ var _BindingLayer = (function _BindingLayerWrapper() {
         'doOnUnbind'
     ];
 
-    var _sharedModels = _BindingLayerWorker.models = {};
+    var _sharedModels = {};
+
+    _BindingLayerWorker.model = function _model(modelName) {
+        return _sharedModels[modelName].instance;
+    };
 
     function _BindingLayerWorker(bindingTarget, bindingInterface) {
         'use strict';
@@ -73,11 +77,15 @@ var _BindingLayer = (function _BindingLayerWrapper() {
                 _modelFields = (modelData.def || (modelData.def = require('../../models/' + _modelName))).fields,
                 _modelObject = _sharedModels[_modelName] || _print('model "', _modelName, '" added to list of shared models') || (_sharedModels[_modelName] = {
                     unbindFns: {},
-                    instance: new _DataModel(_modelFields)
+                    instance: new _DataModel(_modelFields, {
+                        defaultValues: options && options.defaultValues
+                    })
                 });
 
             Object.keys(mapping).forEach(function _forEach(mappingKey) {
                 var _mappingItem = mapping[mappingKey];
+
+                _mappingItem.propName || (_mappingItem.propName = mappingKey);
 
                 _optionKeys.forEach(function _forEach(optionKey) {
                     if (_mappingItem[optionKey] === undefined) {
@@ -89,10 +97,18 @@ var _BindingLayer = (function _BindingLayerWrapper() {
             _boundModels[_modelName] = _modelObject;
 
             var _unbindModelFieldFns = _modelFields.map(function _map(fieldDef) {
-                return _bindModelField(_modelObject.instance, fieldDef.name, mapping[fieldDef.name], options && options.isSource);
-            }).filter(function _filter(unbindModelFieldFn) {
-                return !!unbindModelFieldFn;
-            });
+                var _mapping = mapping[fieldDef.name];
+
+                if (!_mapping) {
+                    return;
+                }
+
+                if (!_mapping.modelMayWrite && !_mapping.modelMayReadOn) {
+                    return;
+                }
+
+                return _bindModelField(_modelObject.instance, fieldDef.name, _mapping, options && options.isSource);
+            }).filter(Boolean);
 
             _unbindModelFieldFns.length && (_modelObject.unbindFns[_id] = function _unbindObject() {
                 var _unbindModelFieldFn;
@@ -102,22 +118,24 @@ var _BindingLayer = (function _BindingLayerWrapper() {
                 }
             });
 
-            _print('object [id:', _id, '] bound to model "', _modelName, '"');
+            _print('object [id:', _id, '] bound to model "', _modelName, '" (current connections number: ', Object.keys(_modelObject.unbindFns).length, ')');
         }
 
         function _unbindModel(modelName) {
             var _unbindFns = _boundModels[modelName].unbindFns;
 
-            _unbindFns[_id] && (_unbindFns[_id]() || (delete _unbindFns[_id]));
+            _unbindFns[_id] && _unbindFns.extract(_id)();
 
             delete _boundModels[modelName];
 
-            _print('object [id:', _id, '] unbound from model "', modelName, '"');
+            if (!Object.keys(_sharedModels[modelName].unbindFns).length) {
+                _print('object [id:', _id, '] unbound from model "', modelName, '"');
 
-            if (!_unbindFns.length) {
                 delete _sharedModels[modelName];
 
                 _print('model "', modelName, '" destroyed as unclaimed');
+            } else {
+                _print('object [id:', _id, '] unbound from model "', modelName, '" (', Object.keys(_sharedModels[modelName].unbindFns).length, ' more left)');
             }
         }
 
@@ -125,9 +143,14 @@ var _BindingLayer = (function _BindingLayerWrapper() {
             Object.keys(_boundModels).forEach(_unbindModel);
         }
 
+        function _invalidateModel(modelName, fieldNames) {
+            _boundModels[modelName].instance.invalidate(bindingInterface, fieldNames);
+        }
+
         bindingTarget.bindModel = _bindModel;
         bindingTarget.unbindModel = _unbindModel;
         bindingTarget.unbindAllModels = _unbindAllModels;
+        bindingTarget.invalidateModel = _invalidateModel;
     }
 
     return _BindingLayerWorker;
