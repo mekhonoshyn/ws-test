@@ -34,7 +34,7 @@ var worldDateTime = require('./external-utils/server/DateTime')([
         };
     }())
 ][3], {
-    makeBindable: true
+    makeBindable: 'time'
 });
 
 //worldDateTime.bindModel({
