@@ -39,11 +39,11 @@
         <br/>blue x:&nbsp<input id="input_blue_x"/>&nbsp<span class="description">// blue_interface.x</span>
         <br/>blue y:&nbsp<input id="input_blue_y"/>&nbsp<span class="description">// blue_interface.y</span>
         <div class="description">
-            <h3>use interfaces from console to read/write;<br/>run "dndUnbindFn()" from console to unbind</h3>
+            <h3>use defined interfaces from console to read/write;<br/>run "dndUnbindFn()" from console to unbind</h3>
         </div>
     </div>
 
-    <style scoped="scoped">.div-rect{top:0;left:0;position:absolute;width:200px;height:200px}#rect_red{background-color:rgba(0,0,0,0.1)}#rect_blue{background-color:rgba(0,0,0,0.15)}</style>
+    <style scoped="scoped">.div-rect:before{content:'drag me'}.div-rect{top:0;left:0;position:absolute;width:200px;height:200px;line-height:200px;text-align:center}#rect_red{background-color:rgba(0,0,0,0.1)}#rect_blue{background-color:rgba(0,0,0,0.15)}</style>
     <div id="rect_red" class="div-rect"></div>
     <div id="rect_blue" class="div-rect"></div>
 

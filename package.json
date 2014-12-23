@@ -1,13 +1,14 @@
 {
-  "name": "ws-test",
-  "version": "0.0.1",
-  "dependencies": {
-    "ws": "latest",
-    "useful-utils": "git://github.com/mekhonoshyn/useful-utils.git",
-    "nanotimer": "latest"
-  },
-  "devDependencies": {
-    "del": "^1.1.0",
-    "node-fs": "^0.1.7"
-  }
+    "name": "ws-test",
+    "version": "0.0.1",
+    "description": "web-socket + two-way binding test application",
+    "dependencies": {
+        "ws": "latest",
+        "useful-utils": "git://github.com/mekhonoshyn/useful-utils.git",
+        "nanotimer": "latest"
+    },
+    "devDependencies": {
+        "del": "^1.1.0",
+        "node-fs": "^0.1.7"
+    }
 }
