@@ -1,0 +1,58 @@
+<!--suppress ALL -->
+<style>*{font-family:monospace;}</style>
+<body>
+    <style scoped="scoped">.description{font-size:80%;color:lightgray}</style>
+    <div>
+        <div class="description">
+            <h2>"Server --> Client" one-way binding</h2>
+        </div>
+        server date-time:&nbsp<label id="server_time"></label>
+        <div class="description">
+            <h3>run "serverTimeUnbindFn()" from console to unbind</h3>
+        </div>
+    </div>
+
+    <hr/>
+
+    <div>
+        <style scoped="scoped">.output-label{padding:0 2px}</style>
+        <div class="description">
+            <h2>Local one-way binding</h2>
+        </div>
+        input:&nbsp&nbsp&nbsp&nbsp<input id="local-input" value="custom-value"/>
+        <br/>output 0:&nbsp<label id="local-output-0" class="output-label"></label>
+        <br/>output 1:&nbsp<label id="local-output-1" class="output-label"></label>
+        <br/>output 2:&nbsp<label id="local-output-2" class="output-label"></label>
+        <div class="description">
+            <h3>edit input field value to make model apply it to output fields;<br/>run "localIOUnbindFn()" from console to unbind</h3>
+        </div>
+    </div>
+
+    <hr/>
+
+    <div>
+        <div class="description">
+            <h2>"Client <--> Client" two-way binding</h2>
+        </div>
+        red x:&nbsp&nbsp<input id="input_red_x"/>&nbsp<span class="description">// red_interface.x</span>
+        <br/>red y:&nbsp&nbsp<input id="input_red_y"/>&nbsp<span class="description">// red_interface.y</span>
+        <br/>blue x:&nbsp<input id="input_blue_x"/>&nbsp<span class="description">// blue_interface.x</span>
+        <br/>blue y:&nbsp<input id="input_blue_y"/>&nbsp<span class="description">// blue_interface.y</span>
+        <div class="description">
+            <h3>use interfaces from console to read/write;<br/>run "dndUnbindFn()" from console to unbind</h3>
+        </div>
+    </div>
+
+    <style scoped="scoped">.div-rect{top:0;left:0;position:absolute;width:200px;height:200px}#rect_red{background-color:rgba(0,0,0,0.1)}#rect_blue{background-color:rgba(0,0,0,0.15)}</style>
+    <div id="rect_red" class="div-rect"></div>
+    <div id="rect_blue" class="div-rect"></div>
+
+    <style scoped="scoped">.div-button{position:absolute;width:30px;height:30px;background-color:grey;line-height:30px;text-align:center;font-size:1.5em;cursor:default}.to-top{bottom:60px;right:30px}.to-right{bottom:30px;right:0}.to-bottom{bottom:0;right:30px}.to-left{bottom:30px;right:60px}</style>
+    <div class="div-button to-top">&#x21d1</div>
+    <div class="div-button to-right">&#x21d2</div>
+    <div class="div-button to-bottom">&#x21d3</div>
+    <div class="div-button to-left">&#x21d0</div>
+
+    <script src="../external-utils/client/demo.js"></script>
+    <script src="client.js"></script>
+</body>

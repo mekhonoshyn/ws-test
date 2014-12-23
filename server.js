@@ -1,11 +1,10 @@
-var _print = require('./static/general/print');
+var _print = require('./external-utils/server/print');
 
-require('./static/general/setup');
-require('./static/server/wss')(8082);
+require('./external-utils/server/WSSrv')(8082, true);
 
 _print('web socket is listening port 8082');
 
-var worldDateTime = require('./static/server/DateTime')([
+var worldDateTime = require('./external-utils/server/DateTime')([
     {
         YY: 2014,
         MM: 12,
@@ -73,7 +72,8 @@ var worldDateTime = require('./static/server/DateTime')([
 //});
 
 worldDateTime.bindModel({
-    name: 'time-only'
+    name: 'time-only',
+    def: require('./models/time-only')
 }, {
     time: {
         modelMayReadOn: 'time-changed'
@@ -94,5 +94,5 @@ var timer = new NanoTimer();
 timer.setInterval(function _() {
     worldDateTime.inc();
 
-    _print(worldDateTime.out());
+//    _print(worldDateTime.out());
 }, [], '1s');

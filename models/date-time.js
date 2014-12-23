@@ -1,23 +1,35 @@
 /**
- * created by mekhonoshyn on 11/20/14.
+ * created by mekhonoshyn on 20-Nov-14.
  */
 
-var _hash = require('../static/general/hash');
+var _hash = require('../external-utils/server/hash');
 
 module.exports = {
-    bindRoot: true,
     fields: [
-        'time',
+        {
+            name: 'time',
+            initialValue: ''
+        },
         'year',
         'month',
         'day',
         'hour',
         'minute',
         'second'
-    ].map(function (fieldName) {
-        return {
-            name: fieldName,
-            key: _hash()
-        };
+    ].map(function (field) {
+        var _field;
+
+        if (typeof field === 'string') {
+            _field = {
+                name: field,
+                initialValue: 0
+            };
+        } else {
+            _field = field;
+        }
+
+        _field.key = _hash();
+
+        return _field;
     })
 };
